@@ -1,17 +1,10 @@
 package com.projects.shinku443.budget_app.repository
 
 import Category
-import Transaction
 import com.projects.shinku443.budget_app.api.ApiClient
-import com.projects.shinku443.budget_app.model.*
+import com.projects.shinku443.budget_app.model.CategoryType
 
-class BudgetRepository(private val api: ApiClient) {
-    suspend fun getTransactions(month: String): List<Transaction> =
-        api.get("/transactions?month=$month")
-
-    suspend fun addTransaction(tx: Transaction): Transaction =
-        api.post("/transactions", tx)
-
+class CategoryRepository(private val api: ApiClient) {
     suspend fun getCategories(): List<Category> =
         api.get("/categories")
 

@@ -1,3 +1,6 @@
+import com.projects.shinku443.budget_app.model.TransactionType
+import kotlinx.serialization.Serializable
+
 @Serializable
 data class Transaction(
     val id: String,

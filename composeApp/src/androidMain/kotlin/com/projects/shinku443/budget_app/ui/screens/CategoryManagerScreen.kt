@@ -3,13 +3,14 @@ package com.mongo.budget.android.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mongo.budget.model.Category
-import com.mongo.budget.model.CategoryType
-import com.mongo.budget.viewmodel.CategoryViewModel
+import com.projects.shinku443.budget_app.model.CategoryType
+import com.projects.shinku443.budget_app.viewmodel.CategoryViewModel
 
 @Composable
 fun CategoryCreationScreen(viewModel: CategoryViewModel) {
@@ -24,7 +25,9 @@ fun CategoryCreationScreen(viewModel: CategoryViewModel) {
         BasicTextField(
             value = name,
             onValueChange = { name = it },
-            modifier = Modifier.fillMaxWidth().padding(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
         )
         Row {
             Button(onClick = { type = CategoryType.EXPENSE }) {
