@@ -27,8 +27,8 @@ kotlin {
             implementation("io.ktor:ktor-client-core:2.3.7")
             implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
-            implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
+            api(libs.androidx.lifecycle.viewmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -36,6 +36,7 @@ kotlin {
 
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:2.3.7")
+            implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
         }
 
         iosMain.dependencies {

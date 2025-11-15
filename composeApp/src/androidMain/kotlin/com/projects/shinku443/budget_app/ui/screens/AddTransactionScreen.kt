@@ -6,7 +6,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.projects.shinku443.budget_app.model.Transaction
 import com.projects.shinku443.budget_app.model.TransactionType
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
 import java.util.UUID

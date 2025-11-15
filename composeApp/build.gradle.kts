@@ -31,6 +31,11 @@ kotlin {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation("io.ktor:ktor-client-okhttp:2.3.7")
+            implementation("androidx.compose.material:material-icons-core:1.7.5")
+            implementation("androidx.compose.material:material-icons-extended:1.7.5")
+            implementation("io.insert-koin:koin-android:3.5.0")
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -39,14 +44,11 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
             implementation("io.ktor:ktor-client-core:2.3.7")
             implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
             implementation("io.insert-koin:koin-core:3.5.0")
-            implementation("io.insert-koin:koin-android:3.5.0")
         }
 
         iosMain.dependencies {

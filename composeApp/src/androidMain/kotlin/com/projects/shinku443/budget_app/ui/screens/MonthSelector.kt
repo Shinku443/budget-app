@@ -1,32 +1,54 @@
 package com.projects.shinku443.budget_app.ui.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
-import java.time.YearMonth
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.projects.shinku443.budget_app.util.YearMonth
 
 @Composable
-fun MonthSelector(currentMonth: YearMonth, onMonthSelected: (YearMonth) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    val months = (0..11).map { YearMonth.now().minusMonths(it.toLong()) }
-
-    Box {
-        TextButton(onClick = { expanded = true }) {
-            Text(currentMonth.toString())
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            months.forEach { month ->
-                DropdownMenuItem(
-                    text = { Text(month.toString()) },
-                    onClick = {
-                        expanded = false
-                        onMonthSelected(month)
-                    }
-                )
+fun MonthSelector(
+    currentMonth: YearMonth,
+    onMonthSelected: (YearMonth) -> Unit
+) {
+    Row(modifier = Modifier.padding(8.dp)) {
+        Button(onClick = {
+            val prevMonth = if (currentMonth.month == 1) {
+                YearMonth(currentMonth.year - 1, 12)
+            } else {
+                YearMonth(currentMonth.year, currentMonth.month - 1)
             }
+            onMonthSelected(prevMonth)
+        }) {
+            Text("<")
+        }
+
+        Text(
+            text = prettyFormat(currentMonth),
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Button(onClick = {
+            val nextMonth = if (currentMonth.month == 12) {
+                YearMonth(currentMonth.year + 1, 1)
+            } else {
+                YearMonth(currentMonth.year, currentMonth.month + 1)
+            }
+            onMonthSelected(nextMonth)
+        }) {
+            Text(">")
         }
     }
+}
+
+private fun prettyFormat(yearMonth: YearMonth): String {
+    val monthNames = listOf(
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    )
+    val monthName = monthNames[yearMonth.month - 1]
+    return "$monthName ${yearMonth.year}"
 }

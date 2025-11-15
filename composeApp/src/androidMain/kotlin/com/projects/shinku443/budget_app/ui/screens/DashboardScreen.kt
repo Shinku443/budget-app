@@ -4,13 +4,16 @@ import Transaction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mongo.budget.viewmodel.BudgetViewModel
 import com.projects.shinku443.budget_app.model.TransactionType
 import com.projects.shinku443.budget_app.ui.screens.MonthSelector
+import com.projects.shinku443.budget_app.util.YearMonth
+import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -19,6 +22,7 @@ fun DashboardScreen(viewModel: BudgetViewModel, onAddTransaction: () -> Unit) {
     val income by viewModel.income.collectAsState()
     val expense by viewModel.expense.collectAsState()
     val net by viewModel.net.collectAsState()
+    val currentMonth = viewModel.currentMonth
 
     Scaffold(
         topBar = {
@@ -26,9 +30,9 @@ fun DashboardScreen(viewModel: BudgetViewModel, onAddTransaction: () -> Unit) {
                 title = { Text("Budget Dashboard") },
                 actions = {
                     MonthSelector(
-                        currentMonth = viewModel.currentMonth,
-                        onMonthSelected = { month ->
-                            viewModel.loadTransactions(month.toString())
+                        currentMonth = currentMonth,
+                        onMonthSelected = { monthYear: YearMonth ->
+                            viewModel.loadTransactions(monthYear)
                         }
                     )
                 }
@@ -61,7 +65,9 @@ fun DashboardScreen(viewModel: BudgetViewModel, onAddTransaction: () -> Unit) {
 @Composable
 fun SummaryCard(income: Double, expense: Double, net: Double) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
         elevation = CardDefaults.cardElevation()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -75,7 +81,9 @@ fun SummaryCard(income: Double, expense: Double, net: Double) {
 @Composable
 fun TransactionItem(tx: Transaction) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
         elevation = CardDefaults.cardElevation()
     ) {
         Row(

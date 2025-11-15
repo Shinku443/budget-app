@@ -6,7 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.projects.shinku443.budget_app.repository.BudgetRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.YearMonth
+import com.projects.shinku443.budget_app.util.TimeWrapper
+import com.projects.shinku443.budget_app.util.YearMonth
 
 class BudgetViewModel(
     private val repository: BudgetRepository
@@ -15,7 +16,7 @@ class BudgetViewModel(
     private val _transactions = MutableStateFlow<List<Transaction>>(emptyList())
     val transactions: StateFlow<List<Transaction>> = _transactions.asStateFlow()
 
-    private val _currentMonth = MutableStateFlow(YearMonth.now())
+    private val _currentMonth = MutableStateFlow(TimeWrapper.currentYearMonth())
     val currentMonth: YearMonth get() = _currentMonth.value
 
     val income: StateFlow<Double> = transactions.map { list ->
@@ -29,11 +30,12 @@ class BudgetViewModel(
     val net: StateFlow<Double> = combine(income, expense) { inc, exp -> inc - exp }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
 
-    fun loadTransactions(month: String) {
+
+    fun loadTransactions(monthYear: YearMonth) {
         viewModelScope.launch {
-            val txs = repository.getTransactions(month)
+            val txs = repository.getTransactions(TimeWrapper.formatMonthYear(monthYear))
             _transactions.value = txs
-            _currentMonth.value = YearMonth.parse(month)
+            _currentMonth.value = monthYear
         }
     }
 
@@ -41,7 +43,8 @@ class BudgetViewModel(
         viewModelScope.launch {
             repository.addTransaction(tx)
             // reload current month after adding
-            loadTransactions(_currentMonth.value.toString())
+            loadTransactions(_currentMonth.value)
         }
     }
+
 }
