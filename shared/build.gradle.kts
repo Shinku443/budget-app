@@ -38,6 +38,7 @@ kotlin {
         androidMain.dependencies {
             implementation("io.ktor:ktor-client-okhttp:2.3.7")
             implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
+            implementation("androidx.compose.material:material:1.4.0")
         }
 
         iosMain.dependencies {

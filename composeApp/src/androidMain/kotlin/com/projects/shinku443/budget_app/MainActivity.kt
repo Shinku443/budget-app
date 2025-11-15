@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.compose.ui.tooling.preview.Preview
 import com.projects.shinku443.budget_app.ui.AddTransactionScreen
-import com.projects.shinku443.budget_app.ui.dashboard.DashboardScreen
+import com.projects.shinku443.budget_app.ui.screens.DashboardScreen
 import com.projects.shinku443.budget_app.ui.theme.AppTheme
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
 import org.koin.android.ext.android.inject

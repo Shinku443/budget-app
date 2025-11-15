@@ -49,6 +49,7 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
             implementation("io.insert-koin:koin-core:3.5.0")
+            implementation("co.touchlab:kermit:2.0.4")
         }
 
         iosMain.dependencies {
