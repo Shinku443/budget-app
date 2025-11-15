@@ -1,3 +1,100 @@
+📊 Budget App
+A cross‑platform budgeting app built with Kotlin Multiplatform + Jetpack Compose. Features include transaction input, monthly summaries, category management, and historical tracking.
+
+✨ Features
+Add, edit, and delete transactions
+
+Categorize income and expenses
+
+Month/year selector with pull‑to‑refresh
+
+Dashboard with totals (Income, Expense, Net)
+
+Backend API integration for persistence
+
+🖼️ Mockups (Textual Wireframes)
+Dashboard Screen
+Code
+-------------------------------------------------
+| November 2025                                 |
+| [Refresh] [Pick Month]                        |
+-------------------------------------------------
+| Income:   $3,200                              |
+| Expense:  $2,100                              |
+| Net:      $1,100                              |
+-------------------------------------------------
+| Transactions                                  |
+|-----------------------------------------------|
+| Groceries      -$120   [Delete]               |
+| Rent           -$950   [Delete]               |
+| Salary        +$3,200  [Delete]               |
+-------------------------------------------------
+[ + Add Transaction ]
+Add Transaction Screen
+Code
+-------------------------------------------------
+| Add Transaction   [Back] [Save]               |
+-------------------------------------------------
+| Amount: [___________]                         |
+| Category: [Dropdown ▾]                        |
+|   - Groceries                                 |
+|   - Rent                                      |
+|   - Utilities                                 |
+|   - ➕ Create new category                     |
+-------------------------------------------------
+Month/Year Picker
+Code
+-------------------------------------------------
+| Select Month & Year                           |
+-------------------------------------------------
+| Month: [November ▾]                           |
+| Year:  [2025]                                 |
+-------------------------------------------------
+[ OK ]   [ Cancel ]
+🔌 API Endpoints
+Transactions
+GET /transactions?month=YYYY-MM → List transactions for a month
+
+POST /transactions → Add a new transaction
+
+json
+{
+  "id": "uuid",
+  "amount": 120.0,
+  "categoryId": "groceries",
+  "categoryType": "EXPENSE",
+  "date": "2025-11"
+}
+DELETE /transactions/{id} → Delete a transaction
+
+Categories
+GET /categories → List categories
+
+POST /categories → Create a new category
+
+json
+{
+  "name": "Groceries",
+  "type": "EXPENSE"
+}
+🚀 Tech Stack
+Frontend: Kotlin Multiplatform, Jetpack Compose
+
+Backend: Ktor (REST API)
+
+State Management: StateFlow in ViewModel
+
+UI: Material3 with pullToRefresh
+
+📱 Roadmap
+Authentication (optional)
+
+Export summaries (CSV/PDF)
+
+Premium analytics (spending trends, forecasts)
+
+
+---------------------------------------------------------------------------------------------------------------
 This is a Kotlin Multiplatform project targeting Android, iOS, Server.
 
 * [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
