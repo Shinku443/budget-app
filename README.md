@@ -1,4 +1,4 @@
-📊 Budget App
+# 📊 Budget App
 A cross‑platform budgeting app built with Kotlin Multiplatform + Jetpack Compose. Features include transaction input, monthly summaries, category management, and historical tracking.
 
 ✨ Features
@@ -14,8 +14,7 @@ Backend API integration for persistence
 
 🖼️ Mockups (Textual Wireframes)
 Dashboard Screen
-Code
--------------------------------------------------
+```-------------------------------------------------
 | November 2025                                 |
 | [Refresh] [Pick Month]                        |
 -------------------------------------------------
@@ -29,9 +28,10 @@ Code
 | Rent           -$950   [Delete]               |
 | Salary        +$3,200  [Delete]               |
 -------------------------------------------------
-[ + Add Transaction ]
+```
+
 Add Transaction Screen
-Code
+```
 -------------------------------------------------
 | Add Transaction   [Back] [Save]               |
 -------------------------------------------------
@@ -42,8 +42,9 @@ Code
 |   - Utilities                                 |
 |   - ➕ Create new category                     |
 -------------------------------------------------
+```
 Month/Year Picker
-Code
+```
 -------------------------------------------------
 | Select Month & Year                           |
 -------------------------------------------------
@@ -51,6 +52,7 @@ Code
 | Year:  [2025]                                 |
 -------------------------------------------------
 [ OK ]   [ Cancel ]
+```
 🔌 API Endpoints
 Transactions
 GET /transactions?month=YYYY-MM → List transactions for a month
