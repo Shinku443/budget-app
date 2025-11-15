@@ -1,3 +1,6 @@
+package com.projects.shinku443.budget_app.ui.screens
+
+import Category
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Divider
@@ -21,24 +24,17 @@ fun CategorySelector(
         Text(selected?.name ?: "Select Category", Modifier.clickable { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             categories.forEach {
-                DropdownMenuItem(
-                    onClick = {
-                        onSelect(it)
-                        expanded = false
-                    },
-                    text = {
-                        Text(it.name)
-                    }
-                )
+                DropdownMenuItem(onClick = {
+                    onSelect(it)
+                    expanded = false
+                }, text = { Text(it.name) })
             }
             Divider()
             DropdownMenuItem(onClick = {
                 val newCat = Category(UUID.randomUUID().toString(), "New Category", CategoryType.EXPENSE)
                 onSelect(newCat)
                 expanded = false
-            }, text = {
-                Text("Create new category")
-            })
+            }, text = { Text("Create new category") })
         }
     }
 }

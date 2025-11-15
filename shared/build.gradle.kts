@@ -29,6 +29,7 @@ kotlin {
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
             implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
             api(libs.androidx.lifecycle.viewmodel)
+            implementation("co.touchlab:kermit:2.0.4")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

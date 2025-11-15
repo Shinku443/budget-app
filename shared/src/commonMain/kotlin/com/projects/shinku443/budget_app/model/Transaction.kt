@@ -1,12 +1,11 @@
-import com.projects.shinku443.budget_app.model.TransactionType
+import com.projects.shinku443.budget_app.model.CategoryType
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class Transaction(
     val id: String,
-    val date: String, // ISO 8601
     val amount: Double,
-    val categoryId: String,
-    val type: TransactionType,
-    val notes: String? = null
+    val type: CategoryType,
+    val categoryId: String,   // ✅ store just the ID
+    val date: String
 )

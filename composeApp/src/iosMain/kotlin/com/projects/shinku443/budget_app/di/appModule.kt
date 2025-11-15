@@ -1,11 +1,10 @@
-// shared/src/androidMain/kotlin/com/projects/shinku443/budget_app/di/AppModule.kt
+// shared/src/iosMain/kotlin/com/projects/shinku443/budget_app/di/AppModule.kt
 package com.projects.shinku443.budget_app.di
 
 import com.projects.shinku443.budget_app.api.ApiClient
 import com.projects.shinku443.budget_app.repository.BudgetRepository
-import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
 import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
+import io.ktor.client.engine.darwin.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
@@ -13,13 +12,12 @@ import org.koin.dsl.module
 
 val appModule = module {
     single {
-        HttpClient(OkHttp) {
+        HttpClient(Darwin) {
             install(ContentNegotiation) {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
     }
-    single { ApiClient("http://10.0.2.2:8080", get()) }
+    single { ApiClient("http://127.0.0.1:8080", get()) }
     single { BudgetRepository(get()) }
-    single { BudgetViewModel(get()) }
 }

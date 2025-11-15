@@ -7,10 +7,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.projects.shinku443.budget_app.model.TransactionType
+import com.projects.shinku443.budget_app.model.CategoryType
 import com.projects.shinku443.budget_app.ui.screens.MonthSelector
 import com.projects.shinku443.budget_app.util.YearMonth
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
@@ -97,7 +99,7 @@ fun TransactionItem(tx: Transaction) {
             Text(
                 text = "${tx.amount}",
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (tx.type == TransactionType.EXPENSE) MaterialTheme.colorScheme.error
+                color = if (tx.type == CategoryType.EXPENSE) MaterialTheme.colorScheme.error
                 else MaterialTheme.colorScheme.primary
             )
         }

@@ -1,65 +1,67 @@
-package com.projects.shinku443.budget_app.ui.add
+package com.projects.shinku443.budget_app.ui
 
+import Category
 import Transaction
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.projects.shinku443.budget_app.model.TransactionType
+import com.projects.shinku443.budget_app.model.CategoryType
+import com.projects.shinku443.budget_app.ui.screens.CategorySelector
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
-import java.util.UUID
-import java.time.LocalDate
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTransactionScreen(viewModel: BudgetViewModel, onDone: () -> Unit) {
+fun AddTransactionScreen(
+    viewModel: BudgetViewModel,
+    onCancel: () -> Unit
+) {
     var amount by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf(TransactionType.EXPENSE) }
+    var selectedCategory by remember { mutableStateOf<Category?>(null) }
 
-    Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
-        OutlinedTextField(
-            value = amount,
-            onValueChange = { amount = it },
-            label = { Text("Amount") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Simple toggle for type
-        Row {
-            RadioButton(selected = type == TransactionType.EXPENSE, onClick = { type = TransactionType.EXPENSE })
-            Text("Expense")
-            Spacer(modifier = Modifier.width(16.dp))
-            RadioButton(selected = type == TransactionType.INCOME, onClick = { type = TransactionType.INCOME })
-            Text("Income")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = notes,
-            onValueChange = { notes = it },
-            label = { Text("Notes") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            val tx = Transaction(
-                id = UUID.randomUUID().toString(),
-                date = LocalDate.now().toString(),
-                amount = amount.toDoubleOrNull() ?: 0.0,
-                categoryId = "Groceries", // TODO: hook up category selector
-                type = type,
-                notes = notes
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Add Transaction") },
+                navigationIcon = {
+                    IconButton(onClick = onCancel) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        val tx = Transaction(
+                            id = java.util.UUID.randomUUID().toString(),
+                            amount = amount.toDoubleOrNull() ?: 0.0,
+                            type = CategoryType.EXPENSE, // or INCOME
+                            categoryId = selectedCategory?.id ?: "0",
+                            date = viewModel.currentMonth.toString()
+                        )
+                        viewModel.addTransaction(tx)
+                        onCancel()
+                    }) {
+                        Icon(Icons.Default.Save, contentDescription = "Save")
+                    }
+                }
             )
-            viewModel.addTransaction(tx)
-            onDone()
-        }) {
-            Text("Save Transaction")
+        }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).padding(16.dp)) {
+            OutlinedTextField(
+                value = amount,
+                onValueChange = { amount = it },
+                label = { Text("Amount") }
+            )
+            Spacer(Modifier.height(16.dp))
+            CategorySelector(
+                categories = viewModel.categories.collectAsState().value,
+                selected = selectedCategory,
+                onSelect = { selectedCategory = it }
+            )
         }
     }
 }
