@@ -53,8 +53,8 @@ Month/Year Picker
 -------------------------------------------------
 [ OK ]   [ Cancel ]
 ```
-🔌 API Endpoints
-Transactions
+# 🔌 API Endpoints
+## Transactions
 GET /transactions?month=YYYY-MM → List transactions for a month
 
 POST /transactions → Add a new transaction
@@ -69,7 +69,7 @@ json
 }
 DELETE /transactions/{id} → Delete a transaction
 
-Categories
+## Categories
 GET /categories → List categories
 
 POST /categories → Create a new category
@@ -79,21 +79,31 @@ json
   "name": "Groceries",
   "type": "EXPENSE"
 }
-🚀 Tech Stack
-Frontend: Kotlin Multiplatform, Jetpack Compose
+# 🚀 Tech Stack
+## Frontend: Kotlin Multiplatform, Jetpack Compose
 
-Backend: Ktor (REST API)
+## Backend: Ktor (REST API)
 
-State Management: StateFlow in ViewModel
+## State Management: StateFlow in ViewModel
 
-UI: Material3 with pullToRefresh
+## UI: Material3 with pullToRefresh
 
-📱 Roadmap
-Authentication (optional)
+# 📱 Roadmap
+## Self hosting
 
-Export summaries (CSV/PDF)
+## Family sharing (multiple accounts within same budgets, breakdowns based on person, etc.)
 
-Premium analytics (spending trends, forecasts)
+## Budget comparison month to month and year to year
+
+## Graphs/Visualizations
+
+## AI integration for budget suggestions/cut backs
+
+## Authentication (optional)
+
+## Export summaries (CSV/PDF)
+
+## Premium analytics (spending trends, forecasts)
 
 
 ---------------------------------------------------------------------------------------------------------------
