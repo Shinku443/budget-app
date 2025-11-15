@@ -1,3 +1,7 @@
+# budget-app
+Custom budgeting app that will handle transactions, compare previous budgets, projected budgets, and also track net worth
+
+
 This is a Kotlin Multiplatform project targeting Android, iOS, Web, Server.
 
 * [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
