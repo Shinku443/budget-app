@@ -1,4 +1,3 @@
-// shared/src/iosMain/kotlin/com/projects/shinku443/budget_app/di/AppModule.kt
 package com.projects.shinku443.budget_app.di
 
 import com.projects.shinku443.budget_app.api.ApiClient

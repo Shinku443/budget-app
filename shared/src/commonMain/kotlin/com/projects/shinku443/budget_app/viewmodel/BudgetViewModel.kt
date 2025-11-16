@@ -1,6 +1,6 @@
 package com.projects.shinku443.budget_app.viewmodel
 
-import Category
+import com.projects.shinku443.budget_app.model.Category
 import Transaction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

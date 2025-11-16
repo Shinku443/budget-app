@@ -1,6 +1,6 @@
 package com.projects.shinku443.budget_app.ui.screens
 
-import Category
+import com.projects.shinku443.budget_app.model.Category
 import Transaction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.projects.shinku443.budget_app.model.CategoryType
+import com.projects.shinku443.budget_app.ui.components.CategorySelector
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
 import java.time.LocalDate
 import java.time.ZoneId
@@ -57,7 +58,7 @@ fun AddTransactionScreen(
                                 description = description,
                                 amount = amt,
                                 categoryId = selectedCategory!!.id,
-                                categoryType = selectedCategory!!.type,
+                                categoryType = selectedCategory!!.categoryType,
                                 date = date.toString()
                             )
                             viewModel.addTransaction(tx)
@@ -97,44 +98,13 @@ fun AddTransactionScreen(
                 Text("Date: ${date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))}")
             }
 
-            // Category dropdown
-            var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                OutlinedTextField(
-                    value = selectedCategory?.name ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Category") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    categories.forEach { cat ->
-                        DropdownMenuItem(
-                            text = { Text(cat.name) },
-                            onClick = {
-                                selectedCategory = cat
-                                expanded = false
-                            }
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("➕ New Category") },
-                        onClick = {
-                            expanded = false
-                            showNewCategoryDialog = true
-                        }
-                    )
-                }
-            }
+            CategorySelector(
+                categories = categories,
+                selected = selectedCategory,
+                onSelect = { selectedCategory = it },
+                onCreateNew = { showNewCategoryDialog = true }
+            )
+
         }
     }
 

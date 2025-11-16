@@ -1,6 +1,6 @@
 package com.projects.shinku443.budget_app.repository
 
-import Category
+import com.projects.shinku443.budget_app.model.Category
 import Transaction
 import co.touchlab.kermit.Logger
 import com.projects.shinku443.budget_app.api.ApiClient
@@ -18,7 +18,7 @@ class BudgetRepository(private val api: ApiClient) {
         api.get("/categories")
 
     suspend fun createCategory(name: String, type: CategoryType): Category =
-        api.post("/categories", mapOf("name" to name, "type" to type.name))
+        api.post("/categories", mapOf("name" to name, "categoryType" to type.name))
 
     suspend fun deleteTransaction(id: String): Boolean {
         // Assuming backend supports DELETE

@@ -6,27 +6,35 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.compose.ui.tooling.preview.Preview
 import com.projects.shinku443.budget_app.ui.screens.AddTransactionScreen
+import com.projects.shinku443.budget_app.ui.screens.CategoryCreationScreen
 import com.projects.shinku443.budget_app.ui.screens.DashboardScreen
+import com.projects.shinku443.budget_app.ui.screens.RootScreen
+import com.projects.shinku443.budget_app.ui.screens.SettingsScreen
 import com.projects.shinku443.budget_app.ui.theme.AppTheme
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
+import com.projects.shinku443.budget_app.viewmodel.CategoryViewModel
+import com.projects.shinku443.budget_app.viewmodel.SettingsViewModel
 import org.koin.android.ext.android.inject
+
+enum class Screen {
+    Dashboard, AddTransaction, Categories, Settings
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Assume Koin is started in Application class
-        val viewModel: BudgetViewModel by inject()
+        val budgetViewModel: BudgetViewModel by inject()
+        val categoryViewModel: CategoryViewModel by inject()
+        val settingsViewModel: SettingsViewModel by inject()
 
         setContent {
             AppTheme {
-                var showAdd by remember { mutableStateOf(false) }
-
-                if (showAdd) {
-                    AddTransactionScreen(viewModel) { showAdd = false }
-                } else {
-                    DashboardScreen(viewModel, onAddTransaction = { showAdd = true })
-                }
+                RootScreen(
+                    budgetViewModel = budgetViewModel,
+                    categoryViewModel = categoryViewModel,
+                    settingsViewModel = settingsViewModel
+                )
             }
         }
     }

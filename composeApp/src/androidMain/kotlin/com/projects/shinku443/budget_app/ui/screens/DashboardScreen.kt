@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.pullToRefresh
@@ -15,7 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import co.touchlab.kermit.Logger
+import androidx.compose.ui.unit.dp
 import com.projects.shinku443.budget_app.ui.components.TransactionList
 import com.projects.shinku443.budget_app.util.YearMonth
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
@@ -30,7 +31,9 @@ import java.util.*
 @Composable
 fun DashboardScreen(
     viewModel: BudgetViewModel,
-    onAddTransaction: () -> Unit
+    onAddTransaction: () -> Unit,
+    onNavigateToCategories: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val transactions by viewModel.transactions.collectAsState()
     val monthlyExpenses by viewModel.monthlyExpenses.collectAsState()
@@ -39,6 +42,9 @@ fun DashboardScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     val pullToRefreshState = rememberPullToRefreshState()
     val coroutineScope = rememberCoroutineScope()
+
+    // Drawer state
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     // Month/year picker dialog state
     var showPicker by remember { mutableStateOf(false) }
@@ -50,82 +56,92 @@ fun DashboardScreen(
     }
 
     val onRefresh: () -> Unit = {
-        Logger.e("Test")
         coroutineScope.launch {
             isRefreshing = true
             viewModel.loadTransactions(currentMonth)
-            // wait until loadTransactions finishes
             isRefreshing = false
         }
     }
 
-    Logger.e { "monthly expenses: $monthlyExpenses" }
     val pieChartData = remember(monthlyExpenses) {
         monthlyExpenses.groupBy { it.categoryType.name }
             .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
     }
 
-    Scaffold(
-        modifier = Modifier.pullToRefresh(
-            state = pullToRefreshState,
-            isRefreshing = isRefreshing,
-            onRefresh = onRefresh
-        ),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "${
-                            Month.of(selectedYearMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault())
-                        } ${selectedYearMonth.year}"
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onRefresh) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text(
+                    "Menu",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+                NavigationDrawerItem(
+                    label = { Text("Dashboard") },
+                    selected = true,
+                    onClick = { coroutineScope.launch { drawerState.close() } }
+                )
+                NavigationDrawerItem(
+                    label = { Text("Categories") },
+                    selected = false,
+                    onClick = {
+                        coroutineScope.launch { drawerState.close() }
+                        onNavigateToCategories()
                     }
-                    IconButton(onClick = { showPicker = true }) {
-                        Icon(Icons.Filled.CalendarToday, contentDescription = "Pick Month")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddTransaction,
-                icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                text = { Text("Add Transaction") }
-            )
-        }
-    ) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .fillMaxSize(),
-        ) {
-            Text(
-                modifier = Modifier
-                    .fillMaxWidth()
-                   ,
-                text = "Total Expenses",
-                textAlign = TextAlign.Center
-            )
-            if (pieChartData.isNotEmpty()) {
-                PieChart(
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    values = pieChartData.values.toList(),
-                    label = { index ->
-                        Text(pieChartData.keys.elementAt(index).capitalize())
+                )
+                NavigationDrawerItem(
+                    label = { Text("Settings") },
+                    selected = false,
+                    onClick = {
+                        coroutineScope.launch { drawerState.close() }
+                        onNavigateToSettings()
                     }
                 )
             }
-            if (transactions.isEmpty()) {
-                Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
-            } else {
-                TransactionList(
-                    transactions = transactions,
-                    onDelete = { tx -> viewModel.deleteTransaction(tx) }
+        }
+    ) {
+        Scaffold(
+            modifier = Modifier.pullToRefresh(
+                state = pullToRefreshState,
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh
+            ),
+            floatingActionButton = {
+                ExtendedFloatingActionButton(
+                    onClick = onAddTransaction,
+                    icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
+                    text = { Text("Add Transaction") }
                 )
+            }
+        ) { padding ->
+            Column(
+                Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+            ) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = "Total Expenses",
+                    textAlign = TextAlign.Center
+                )
+                if (pieChartData.isNotEmpty()) {
+                    PieChart(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        values = pieChartData.values.toList(),
+                        label = { index ->
+                            Text(pieChartData.keys.elementAt(index).replaceFirstChar { it.uppercase() })
+                        }
+                    )
+                }
+                if (transactions.isEmpty()) {
+                    Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
+                } else {
+                    TransactionList(
+                        transactions = transactions,
+                        onDelete = { tx -> viewModel.deleteTransaction(tx) }
+                    )
+                }
             }
         }
     }
