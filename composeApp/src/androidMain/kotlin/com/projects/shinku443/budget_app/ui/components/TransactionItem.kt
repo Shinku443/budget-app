@@ -23,7 +23,7 @@ fun TransactionItem(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(tx.type.name)
+            Text(tx.categoryType.name)
             Text("${tx.amount}")
         }
         IconButton(onClick = { onDelete(tx) }) {

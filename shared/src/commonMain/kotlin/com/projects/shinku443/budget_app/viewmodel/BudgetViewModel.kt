@@ -22,17 +22,27 @@ class BudgetViewModel(
     private val _currentMonth = MutableStateFlow(TimeWrapper.currentYearMonth())
     val currentMonth: YearMonth get() = _currentMonth.value
 
+    private val _monthlyBudgetGoal = MutableStateFlow(0.0f)
+    val monthlyBudgetGoal: Float get() = _monthlyBudgetGoal.value
+    
+    
     val expense: StateFlow<Double> = transactions.map { list ->
         list.filter { tx ->
             // expense categories
-            tx.type == CategoryType.EXPENSE
+            tx.categoryType == CategoryType.EXPENSE
         }.sumOf { it.amount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
+
+    val monthlyExpenses: StateFlow<List<Transaction>> = transactions.map { list ->
+        list.filter { tx ->
+            tx.categoryType == CategoryType.EXPENSE
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     val income: StateFlow<Double> = transactions.map { list ->
         list.filter { tx ->
             // income categories
-            tx.type == CategoryType.INCOME
+            tx.categoryType == CategoryType.INCOME
         }.sumOf { it.amount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
 

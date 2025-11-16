@@ -1,8 +1,8 @@
 package com.projects.shinku443.budget_app.ui.screens
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -14,22 +14,26 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import co.touchlab.kermit.Logger
 import com.projects.shinku443.budget_app.ui.components.TransactionList
 import com.projects.shinku443.budget_app.util.YearMonth
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
+import io.github.koalaplot.core.pie.PieChart
+import io.github.koalaplot.core.util.ExperimentalKoalaPlotApi
 import kotlinx.coroutines.launch
 import java.time.Month
 import java.time.format.TextStyle
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
 @Composable
 fun DashboardScreen(
     viewModel: BudgetViewModel,
     onAddTransaction: () -> Unit
 ) {
     val transactions by viewModel.transactions.collectAsState()
+    val monthlyExpenses by viewModel.monthlyExpenses.collectAsState()
     val currentMonth = viewModel.currentMonth
 
     var isRefreshing by remember { mutableStateOf(false) }
@@ -53,6 +57,12 @@ fun DashboardScreen(
             // wait until loadTransactions finishes
             isRefreshing = false
         }
+    }
+
+    Logger.e { "monthly expenses: $monthlyExpenses" }
+    val pieChartData = remember(monthlyExpenses) {
+        monthlyExpenses.groupBy { it.categoryType.name }
+            .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
     }
 
     Scaffold(
@@ -88,13 +98,29 @@ fun DashboardScreen(
             )
         }
     ) { padding ->
-        Box(
+        Column(
             Modifier
                 .padding(padding)
-                .fillMaxSize()
+                .fillMaxSize(),
         ) {
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                   ,
+                text = "Total Expenses",
+                textAlign = TextAlign.Center
+            )
+            if (pieChartData.isNotEmpty()) {
+                PieChart(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    values = pieChartData.values.toList(),
+                    label = { index ->
+                        Text(pieChartData.keys.elementAt(index).capitalize())
+                    }
+                )
+            }
             if (transactions.isEmpty()) {
-                Text("No transactions yet", modifier = Modifier.align(Alignment.Center))
+                Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
                 TransactionList(
                     transactions = transactions,

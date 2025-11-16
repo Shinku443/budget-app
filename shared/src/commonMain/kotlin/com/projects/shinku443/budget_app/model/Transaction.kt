@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 data class Transaction(
     val id: String,
     val amount: Double,
-    val type: CategoryType,
+    val categoryType: CategoryType,
     val categoryId: String,   // ✅ store just the ID
-    val date: String
+    val date: String,
+    val description: String? = null
 )
