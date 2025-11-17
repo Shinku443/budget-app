@@ -5,88 +5,69 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.projects.shinku443.budget_app.Screen
-import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
-import com.projects.shinku443.budget_app.viewmodel.CategoryViewModel
-import com.projects.shinku443.budget_app.viewmodel.SettingsViewModel
+import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.CurrentScreen
+import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RootScreen(
-    budgetViewModel: BudgetViewModel,
-    categoryViewModel: CategoryViewModel,
-    settingsViewModel: SettingsViewModel
-) {
-    var currentScreen by remember { mutableStateOf(Screen.Dashboard) }
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+fun RootScreen() {
+    Navigator(DashboardScreen()) { navigator ->
 
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                Text("Budget App", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
-                NavigationDrawerItem(
-                    label = { Text("Dashboard") },
-                    selected = currentScreen == Screen.Dashboard,
-                    onClick = {
-                        currentScreen = Screen.Dashboard
-                        scope.launch { drawerState.close() }
-                    }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Categories") },
-                    selected = currentScreen == Screen.Categories,
-                    onClick = {
-                        currentScreen = Screen.Categories
-                        scope.launch { drawerState.close() }
-                    }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Settings") },
-                    selected = currentScreen == Screen.Settings,
-                    onClick = {
-                        currentScreen = Screen.Settings
-                        scope.launch { drawerState.close() }
-                    }
-                )
-            }
-        }
-    ) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(currentScreen.name) },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        val scope = rememberCoroutineScope()
+
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            drawerContent = {
+                ModalDrawerSheet {
+                    Text("Budget App", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(16.dp))
+                    NavigationDrawerItem(
+                        label = { Text("Dashboard") },
+                        selected = navigator.lastItem is DashboardScreen,
+                        onClick = {
+                            navigator.replace(DashboardScreen())
+                            scope.launch { drawerState.close() }
                         }
-                    }
-                )
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Categories") },
+                        selected = navigator.lastItem is CategoryManagerScreen,
+                        onClick = {
+                            navigator.replace(CategoryManagerScreen())
+                            scope.launch { drawerState.close() }
+                        }
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("Settings") },
+                        selected = navigator.lastItem is SettingsScreen,
+                        onClick = {
+                            navigator.replace(SettingsScreen())
+                            scope.launch { drawerState.close() }
+                        }
+                    )
+                }
             }
-        ) { padding ->
-            Box(Modifier.padding(padding)) {
-                when (currentScreen) {
-                    Screen.Dashboard -> DashboardScreen(
-                        viewModel = budgetViewModel,
-                        onAddTransaction = { currentScreen = Screen.AddTransaction },
-                        onNavigateToCategories = { currentScreen = Screen.Categories },
-                        onNavigateToSettings = { currentScreen = Screen.Settings }
+        ) {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text("Budget App") },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            }
+                        }
                     )
-
-                    Screen.AddTransaction -> AddTransactionScreen(
-                        viewModel = budgetViewModel,
-                        onBack = { currentScreen = Screen.Dashboard }
-                    )
-
-                    Screen.Categories -> CategoryCreationScreen(viewModel = categoryViewModel)
-                    Screen.Settings -> SettingsScreen(
-                        viewModel = settingsViewModel,
-                        onBack = { currentScreen = Screen.Dashboard })
+                }
+            ) { innerPadding ->
+                Box(Modifier.padding(innerPadding)) {
+                    CurrentScreen() // Voyager renders the active screen here
                 }
             }
         }

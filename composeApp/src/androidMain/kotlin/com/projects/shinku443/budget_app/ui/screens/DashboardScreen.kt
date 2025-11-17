@@ -1,14 +1,8 @@
 package com.projects.shinku443.budget_app.ui.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -17,90 +11,57 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
+import com.projects.shinku443.budget_app.ui.components.CategoryPieChart
 import com.projects.shinku443.budget_app.ui.components.TransactionList
 import com.projects.shinku443.budget_app.util.YearMonth
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
-import io.github.koalaplot.core.pie.PieChart
 import io.github.koalaplot.core.util.ExperimentalKoalaPlotApi
 import kotlinx.coroutines.launch
 import java.time.Month
 import java.time.format.TextStyle
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
-@Composable
-fun DashboardScreen(
-    viewModel: BudgetViewModel,
-    onAddTransaction: () -> Unit,
-    onNavigateToCategories: () -> Unit,
-    onNavigateToSettings: () -> Unit
-) {
-    val transactions by viewModel.transactions.collectAsState()
-    val monthlyExpenses by viewModel.monthlyExpenses.collectAsState()
-    val currentMonth = viewModel.currentMonth
+class DashboardScreen : Screen {
 
-    var isRefreshing by remember { mutableStateOf(false) }
-    val pullToRefreshState = rememberPullToRefreshState()
-    val coroutineScope = rememberCoroutineScope()
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
+    @Composable
+    override fun Content() {
+        val viewModel: BudgetViewModel = getViewModel()
+        val transactions by viewModel.transactions.collectAsState()
+        val monthlyExpenses by viewModel.monthlyExpenses.collectAsState()
+        val currentMonth = viewModel.currentMonth
 
-    // Drawer state
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        var isRefreshing by remember { mutableStateOf(false) }
+        val pullToRefreshState = rememberPullToRefreshState()
+        val coroutineScope = rememberCoroutineScope()
 
-    // Month/year picker dialog state
-    var showPicker by remember { mutableStateOf(false) }
-    var selectedYearMonth by remember { mutableStateOf(currentMonth) }
+        val navigator = LocalNavigator.currentOrThrow
 
-    // Load current month when screen first appears
-    LaunchedEffect(Unit) {
-        viewModel.loadTransactions(currentMonth)
-    }
+        // Month/year picker dialog state
+        var showPicker by remember { mutableStateOf(false) }
+        var selectedYearMonth by remember { mutableStateOf(currentMonth) }
 
-    val onRefresh: () -> Unit = {
-        coroutineScope.launch {
-            isRefreshing = true
+        // Load current month when screen first appears
+        LaunchedEffect(Unit) {
             viewModel.loadTransactions(currentMonth)
-            isRefreshing = false
         }
-    }
 
-    val pieChartData = remember(monthlyExpenses) {
-        monthlyExpenses.groupBy { it.categoryType.name }
-            .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
-    }
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            ModalDrawerSheet {
-                Text(
-                    "Menu",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(16.dp)
-                )
-                NavigationDrawerItem(
-                    label = { Text("Dashboard") },
-                    selected = true,
-                    onClick = { coroutineScope.launch { drawerState.close() } }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Categories") },
-                    selected = false,
-                    onClick = {
-                        coroutineScope.launch { drawerState.close() }
-                        onNavigateToCategories()
-                    }
-                )
-                NavigationDrawerItem(
-                    label = { Text("Settings") },
-                    selected = false,
-                    onClick = {
-                        coroutineScope.launch { drawerState.close() }
-                        onNavigateToSettings()
-                    }
-                )
+        val onRefresh: () -> Unit = {
+            coroutineScope.launch {
+                isRefreshing = true
+                viewModel.loadTransactions(currentMonth)
+                isRefreshing = false
             }
         }
-    ) {
+
+        val pieChartData = remember(transactions) {
+            transactions.groupBy { it.categoryType.name }
+                .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
+        }
+
         Scaffold(
             modifier = Modifier.pullToRefresh(
                 state = pullToRefreshState,
@@ -109,7 +70,7 @@ fun DashboardScreen(
             ),
             floatingActionButton = {
                 ExtendedFloatingActionButton(
-                    onClick = onAddTransaction,
+                    onClick = { /* navigator.push(AddTransactionScreen) */ },
                     icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
                     text = { Text("Add Transaction") }
                 )
@@ -126,12 +87,9 @@ fun DashboardScreen(
                     textAlign = TextAlign.Center
                 )
                 if (pieChartData.isNotEmpty()) {
-                    PieChart(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        values = pieChartData.values.toList(),
-                        label = { index ->
-                            Text(pieChartData.keys.elementAt(index).replaceFirstChar { it.uppercase() })
-                        }
+                    CategoryPieChart(
+                        data = pieChartData,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 }
                 if (transactions.isEmpty()) {
@@ -144,55 +102,55 @@ fun DashboardScreen(
                 }
             }
         }
-    }
 
-    // Month/year picker dialog
-    if (showPicker) {
-        AlertDialog(
-            onDismissRequest = { showPicker = false },
-            title = { Text("Select Month & Year") },
-            text = {
-                Column {
-                    // Month dropdown
-                    var expandedMonth by remember { mutableStateOf(false) }
-                    TextButton(onClick = { expandedMonth = true }) {
-                        Text(Month.of(selectedYearMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault()))
-                    }
-                    DropdownMenu(expanded = expandedMonth, onDismissRequest = { expandedMonth = false }) {
-                        Month.values().forEach { m ->
-                            DropdownMenuItem(
-                                text = { Text(m.getDisplayName(TextStyle.FULL, Locale.getDefault())) },
-                                onClick = {
-                                    selectedYearMonth = YearMonth(selectedYearMonth.year, m.value)
-                                    expandedMonth = false
-                                }
-                            )
+        // Month/year picker dialog
+        if (showPicker) {
+            AlertDialog(
+                onDismissRequest = { showPicker = false },
+                title = { Text("Select Month & Year") },
+                text = {
+                    Column {
+                        // Month dropdown
+                        var expandedMonth by remember { mutableStateOf(false) }
+                        TextButton(onClick = { expandedMonth = true }) {
+                            Text(Month.of(selectedYearMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault()))
                         }
-                    }
+                        DropdownMenu(expanded = expandedMonth, onDismissRequest = { expandedMonth = false }) {
+                            Month.values().forEach { m ->
+                                DropdownMenuItem(
+                                    text = { Text(m.getDisplayName(TextStyle.FULL, Locale.getDefault())) },
+                                    onClick = {
+                                        selectedYearMonth = YearMonth(selectedYearMonth.year, m.value)
+                                        expandedMonth = false
+                                    }
+                                )
+                            }
+                        }
 
-                    // Year input
-                    var yearText by remember { mutableStateOf(selectedYearMonth.year.toString()) }
-                    OutlinedTextField(
-                        value = yearText,
-                        onValueChange = { yearText = it },
-                        label = { Text("Year") }
-                    )
-                    selectedYearMonth = selectedYearMonth.copy(year = yearText.toIntOrNull() ?: selectedYearMonth.year)
+                        // Year input
+                        var yearText by remember { mutableStateOf(selectedYearMonth.year.toString()) }
+                        OutlinedTextField(
+                            value = yearText,
+                            onValueChange = { yearText = it },
+                            label = { Text("Year") }
+                        )
+                        selectedYearMonth = selectedYearMonth.copy(year = yearText.toIntOrNull() ?: selectedYearMonth.year)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.loadTransactions(selectedYearMonth)
+                        showPicker = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPicker = false }) {
+                        Text("Cancel")
+                    }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.loadTransactions(selectedYearMonth)
-                    showPicker = false
-                }) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPicker = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
+            )
+        }
     }
 }

@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
@@ -34,6 +35,7 @@ kotlin {
             implementation("androidx.compose.material:material-icons-core:1.7.5")
             implementation("androidx.compose.material:material-icons-extended:1.7.5")
             implementation("io.insert-koin:koin-android:3.5.0")
+            implementation("io.insert-koin:koin-androidx-compose:3.5.0")
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
@@ -51,6 +53,13 @@ kotlin {
             implementation("io.insert-koin:koin-core:3.5.0")
             implementation("co.touchlab:kermit:2.0.4")
             implementation("io.github.koalaplot:koalaplot-core:0.10.2")
+            val voyagerVersion = "1.1.0-beta02"
+            implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-screenmodel:${voyagerVersion}")
+            implementation("cafe.adriel.voyager:voyager-bottom-sheet-navigator:${voyagerVersion}")
+            implementation("cafe.adriel.voyager:voyager-tab-navigator:${voyagerVersion}")
+            implementation("cafe.adriel.voyager:voyager-transitions:${voyagerVersion}")
+            implementation("cafe.adriel.voyager:voyager-koin:${voyagerVersion}")
         }
 
         iosMain.dependencies {

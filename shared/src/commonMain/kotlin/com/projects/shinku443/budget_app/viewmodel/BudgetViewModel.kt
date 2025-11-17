@@ -15,17 +15,19 @@ class BudgetViewModel(
     private val repository: BudgetRepository
 ) : ViewModel() {
 
-    // Transactions
     private val _transactions = MutableStateFlow<List<Transaction>>(emptyList())
     val transactions: StateFlow<List<Transaction>> = _transactions.asStateFlow()
+
+    private val _categories = MutableStateFlow<List<Category>>(emptyList())
+    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
     private val _currentMonth = MutableStateFlow(TimeWrapper.currentYearMonth())
     val currentMonth: YearMonth get() = _currentMonth.value
 
     private val _monthlyBudgetGoal = MutableStateFlow(0.0f)
     val monthlyBudgetGoal: Float get() = _monthlyBudgetGoal.value
-    
-    
+
+    // Transactions
     val expense: StateFlow<Double> = transactions.map { list ->
         list.filter { tx ->
             // expense categories
@@ -48,6 +50,14 @@ class BudgetViewModel(
 
     val net: StateFlow<Double> = combine(income, expense) { inc, exp -> inc - exp }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
+
+    val categoryTotals: StateFlow<Map<Category, Double>> =
+        combine(categories, transactions) { cats, txs ->
+            cats.associateWith { cat ->
+                txs.filter { it.categoryId == cat.id }
+                    .sumOf { it.amount }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyMap())
 
     fun loadTransactions(monthYear: YearMonth) {
         viewModelScope.launch {
@@ -85,9 +95,6 @@ class BudgetViewModel(
     }
 
     // Categories
-    private val _categories = MutableStateFlow<List<Category>>(emptyList())
-    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
-
     fun loadCategories() {
         viewModelScope.launch {
             try {
