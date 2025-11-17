@@ -58,7 +58,7 @@ fun AddTransactionScreen(
                                 description = description,
                                 amount = amt,
                                 categoryId = selectedCategory!!.id,
-                                categoryType = selectedCategory!!.categoryType,
+                                categoryType = selectedCategory!!.type,
                                 date = date.toString()
                             )
                             viewModel.addTransaction(tx)

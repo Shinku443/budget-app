@@ -1,11 +1,11 @@
 package com.projects.shinku443.budget_app.repository
 
-import com.projects.shinku443.budget_app.model.Category
-import Transaction
 import co.touchlab.kermit.Logger
 import com.projects.shinku443.budget_app.api.ApiClient
-import com.projects.shinku443.budget_app.model.*
-import io.ktor.client.request.delete
+import com.projects.shinku443.budget_app.model.Category
+import com.projects.shinku443.budget_app.model.CategoryType
+import com.projects.shinku443.budget_app.model.Transaction
+import io.ktor.client.request.*
 
 class BudgetRepository(private val api: ApiClient) {
     suspend fun getTransactions(month: String): List<Transaction> =

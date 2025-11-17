@@ -6,10 +6,14 @@ import kotlinx.serialization.Serializable
 data class Category(
     val id: String,
     val name: String,
-    val categoryType: CategoryType,
-    val isActive: Boolean = true
+    val type: CategoryType,
+    val isActive: Boolean = true,
+    val updatedAt: Long
 )
 
-
 @Serializable
-data class CategoryRequest(val name: String, val categoryType: CategoryType)
+data class CategoryRequest(
+    val name: String,
+    val type: CategoryType,
+    val isActive: Boolean
+)

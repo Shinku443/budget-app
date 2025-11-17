@@ -1,47 +1,61 @@
 package com.projects.shinku443.budget_app.viewmodel
 
-import com.projects.shinku443.budget_app.model.Category
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.touchlab.kermit.Logger
+import com.projects.shinku443.budget_app.model.Category
 import com.projects.shinku443.budget_app.model.CategoryType
 import com.projects.shinku443.budget_app.repository.CategoryRepository
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.projects.shinku443.budget_app.sync.SyncService
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
 class CategoryViewModel(
-    private val repo: CategoryRepository
+    private val repo: CategoryRepository,
+    private val syncService: SyncService
 ) : ViewModel() {
-    private val _categories = MutableStateFlow<List<Category>>(emptyList())
-    val categories: StateFlow<List<Category>> = _categories
 
-    init { loadCategories() }
+    val categories: StateFlow<List<Category>> = repo.observeCategories()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    fun loadCategories() {
+    init {
+        refreshCategories()
+    }
+
+    fun refreshCategories() {
         viewModelScope.launch {
-            _categories.value = repo.getCategories()
+            syncService.syncCategories() // API → DB reconciliation
         }
     }
 
     fun createCategory(name: String, type: CategoryType) {
         viewModelScope.launch {
-            Logger.e("name: $name type: $type")
-            repo.createCategory(name, type)
-            loadCategories()
+            repo.createCategory(name, type, isActive = true) // hits API + DB
+            syncService.syncCategories()
         }
     }
 
-    fun updateCategory(id: String, name: String, type: CategoryType) {
+    fun updateCategory(id: String, name: String, type: CategoryType, isActive: Boolean) {
         viewModelScope.launch {
-            repo.updateCategory(id, name, type)
-            loadCategories()
+            repo.updateCategory(id, name, type, isActive) // hits API + DB
+            syncService.syncCategories()
         }
     }
 
-    fun deleteCategories(ids: List<String>) {
+    fun deleteCategory(id: String) {
         viewModelScope.launch {
-            repo.deleteCategories(ids)
-            loadCategories()
+            repo.deleteCategory(id) // hits API + DB
+            syncService.syncCategories()
+        }
+    }
+
+    fun deleteCategories(list: List<String>) {
+        viewModelScope.launch {
+            for (cat in list) {
+                repo.deleteCategory(cat)
+            }
+            syncService.syncCategories()
         }
     }
 }
