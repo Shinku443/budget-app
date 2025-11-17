@@ -28,17 +28,21 @@ kotlin {
     }
 
     sourceSets {
+        val voyagerVersion = "1.1.0-beta02"
+        val koinVersion = "3.5.6"
+
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation("io.ktor:ktor-client-okhttp:2.3.7")
             implementation("androidx.compose.material:material-icons-core:1.7.5")
             implementation("androidx.compose.material:material-icons-extended:1.7.5")
-            implementation("io.insert-koin:koin-android:3.5.0")
-            implementation("io.insert-koin:koin-androidx-compose:3.5.0")
+            implementation("io.insert-koin:koin-android:$koinVersion")
+            implementation("io.insert-koin:koin-androidx-compose:$koinVersion")
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
+
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -46,21 +50,26 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+
             implementation(projects.shared)
+
             implementation("io.ktor:ktor-client-core:2.3.7")
             implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
-            implementation("io.insert-koin:koin-core:3.5.0")
+
+            implementation("io.insert-koin:koin-core:$koinVersion")
+
             implementation("co.touchlab:kermit:2.0.4")
             implementation("io.github.koalaplot:koalaplot-core:0.10.2")
-            val voyagerVersion = "1.1.0-beta02"
+
             implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
-            implementation("cafe.adriel.voyager:voyager-screenmodel:${voyagerVersion}")
-            implementation("cafe.adriel.voyager:voyager-bottom-sheet-navigator:${voyagerVersion}")
-            implementation("cafe.adriel.voyager:voyager-tab-navigator:${voyagerVersion}")
-            implementation("cafe.adriel.voyager:voyager-transitions:${voyagerVersion}")
-            implementation("cafe.adriel.voyager:voyager-koin:${voyagerVersion}")
+            implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-bottom-sheet-navigator:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-tab-navigator:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
+            implementation("cafe.adriel.voyager:voyager-koin:$voyagerVersion")
         }
+
 
         iosMain.dependencies {
             implementation("io.ktor:ktor-client-darwin:2.3.7")

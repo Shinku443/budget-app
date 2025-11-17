@@ -1,6 +1,9 @@
 package com.projects.shinku443.budget_app.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -10,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -20,6 +22,7 @@ import com.projects.shinku443.budget_app.util.YearMonth
 import com.projects.shinku443.budget_app.viewmodel.BudgetViewModel
 import io.github.koalaplot.core.util.ExperimentalKoalaPlotApi
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 import java.time.Month
 import java.time.format.TextStyle
 import java.util.*
@@ -29,7 +32,7 @@ class DashboardScreen : Screen {
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
     @Composable
     override fun Content() {
-        val viewModel: BudgetViewModel = getViewModel()
+        val viewModel: BudgetViewModel = koinViewModel()
         val transactions by viewModel.transactions.collectAsState()
         val monthlyExpenses by viewModel.monthlyExpenses.collectAsState()
         val currentMonth = viewModel.currentMonth
@@ -134,7 +137,8 @@ class DashboardScreen : Screen {
                             onValueChange = { yearText = it },
                             label = { Text("Year") }
                         )
-                        selectedYearMonth = selectedYearMonth.copy(year = yearText.toIntOrNull() ?: selectedYearMonth.year)
+                        selectedYearMonth =
+                            selectedYearMonth.copy(year = yearText.toIntOrNull() ?: selectedYearMonth.year)
                     }
                 },
                 confirmButton = {

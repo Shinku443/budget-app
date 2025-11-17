@@ -13,14 +13,14 @@ import cafe.adriel.voyager.core.screen.Screen
 import com.projects.shinku443.budget_app.model.CategoryType
 import com.projects.shinku443.budget_app.viewmodel.CategoryViewModel
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.getViewModel
+import org.koin.androidx.compose.koinViewModel
 
 class CategoryManagerScreen : Screen {
 
     @Composable
     override fun Content() {
         // If you’re using Koin:
-        val viewModel: CategoryViewModel = getViewModel()
+        val viewModel: CategoryViewModel = koinViewModel()
 
         val categories by viewModel.categories.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
