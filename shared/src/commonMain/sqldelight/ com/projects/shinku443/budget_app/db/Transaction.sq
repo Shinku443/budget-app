@@ -1,0 +1,20 @@
+CREATE TABLE AppTransaction (
+  id TEXT NOT NULL PRIMARY KEY,
+  amount REAL NOT NULL,
+  categoryType TEXT NOT NULL,
+  categoryId TEXT NOT NULL,
+  date TEXT NOT NULL,
+  description TEXT,
+  createdAt INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM AppTransaction;
+
+insertOrReplace:
+INSERT OR REPLACE INTO AppTransaction(
+  id, amount, categoryType, categoryId, date, description, createdAt
+) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM AppTransaction WHERE id = ?;

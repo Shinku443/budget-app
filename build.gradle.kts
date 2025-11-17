@@ -10,4 +10,9 @@ plugins {
     alias(libs.plugins.ktor) apply false
     alias(libs.plugins.kotlinSerialization) apply false
     alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.sqlDelight) apply false
+}
+
+tasks.withType<JavaExec> {
+    systemProperty("org.sqlite.tmpdir", "$buildDir/tmp")
 }

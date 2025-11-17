@@ -68,6 +68,10 @@ kotlin {
             implementation("cafe.adriel.voyager:voyager-tab-navigator:$voyagerVersion")
             implementation("cafe.adriel.voyager:voyager-transitions:$voyagerVersion")
             implementation("cafe.adriel.voyager:voyager-koin:$voyagerVersion")
+
+            implementation("androidx.datastore:datastore:1.1.7")
+            implementation("androidx.datastore:datastore-preferences:1.1.7")
+
         }
 
 

@@ -85,7 +85,7 @@ class CategoryManagerScreen : Screen {
                                     if (checked) selectedIds.add(c.id) else selectedIds.remove(c.id)
                                 }
                             )
-                            Text("${c.name} (${c.categoryType})", modifier = Modifier.padding(start = 8.dp))
+                            Text("${c.name} (${c.type})", modifier = Modifier.padding(start = 8.dp))
                         }
                     }
                 }

@@ -2,37 +2,37 @@ package com.projects.shinku443.budget_app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.projects.shinku443.budget_app.repository.SettingsRepository
+import com.projects.shinku443.budget_app.settings.Settings.Theme
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// Define theme options
-enum class AppTheme { Light, Dark }
+class SettingsViewModel(
+    private val settingsRepo: SettingsRepository
+) : ViewModel() {
 
-class SettingsViewModel : ViewModel() {
+    // Reactive flows backed by DataStore
+    val theme: StateFlow<Theme> = settingsRepo.theme
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Theme.LIGHT)
 
-    // Theme state
-    private val _theme = MutableStateFlow(AppTheme.Light)
-    val theme: StateFlow<AppTheme> = _theme.asStateFlow()
+    val notificationsEnabled: StateFlow<Boolean> = settingsRepo.notificationsEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
-    // Notifications state
-    private val _notificationsEnabled = MutableStateFlow(true)
-    val notificationsEnabled: StateFlow<Boolean> = _notificationsEnabled.asStateFlow()
+    val language: StateFlow<String> = settingsRepo.language
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "en")
 
-    // Update theme
-    fun setTheme(theme: AppTheme) {
-        viewModelScope.launch {
-            _theme.value = theme
-            // TODO: persist to datastore/preferences if needed
-        }
+    // Update methods
+    fun setTheme(theme: Theme) {
+        viewModelScope.launch { settingsRepo.setTheme(theme) }
     }
 
-    // Update notifications
     fun setNotificationsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            _notificationsEnabled.value = enabled
-            // TODO: persist to datastore/preferences if needed
-        }
+        viewModelScope.launch { settingsRepo.setNotificationsEnabled(enabled) }
+    }
+
+    fun setLanguage(language: String) {
+        viewModelScope.launch { settingsRepo.setLanguage(language) }
     }
 }

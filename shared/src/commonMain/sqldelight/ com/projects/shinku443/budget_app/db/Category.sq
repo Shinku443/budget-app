@@ -1,0 +1,17 @@
+CREATE TABLE Category (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  isActive INTEGER NOT NULL,
+  updatedAt INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM Category;
+
+insertOrReplace:
+INSERT OR REPLACE INTO Category(id, name, type, isActive, updatedAt)
+VALUES (?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM Category WHERE id = ?;
