@@ -41,6 +41,8 @@ kotlin {
             implementation("io.insert-koin:koin-androidx-compose:$koinVersion")
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.android.driver)
         }
 
         commonMain.dependencies {
@@ -71,7 +73,6 @@ kotlin {
 
             implementation("androidx.datastore:datastore:1.1.7")
             implementation("androidx.datastore:datastore-preferences:1.1.7")
-
         }
 
 

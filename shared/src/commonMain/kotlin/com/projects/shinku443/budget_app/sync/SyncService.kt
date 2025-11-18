@@ -30,7 +30,7 @@ class SyncService(
         }
     }
 
-    private suspend fun syncTransactions() {
+    suspend fun syncTransactions() {
         val remote = transactionRepo.refreshTransactions()
         val local = transactionRepo.observeTransactions().first()
 

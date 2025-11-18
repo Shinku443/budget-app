@@ -46,6 +46,8 @@ kotlin {
             implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
             implementation("androidx.compose.material:material:1.4.0")
             implementation(libs.sqldelight.android.driver)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines.extensions)
         }
 
         iosMain.dependencies {

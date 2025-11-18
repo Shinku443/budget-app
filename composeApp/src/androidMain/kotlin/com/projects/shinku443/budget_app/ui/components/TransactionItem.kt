@@ -1,6 +1,5 @@
 package com.projects.shinku443.budget_app.ui.components
 
-import Transaction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +11,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.projects.shinku443.budget_app.model.Transaction
 
 @Composable
 fun TransactionItem(
@@ -23,7 +23,7 @@ fun TransactionItem(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(tx.categoryType.name)
+            Text(tx.type.name)
             Text("${tx.amount}")
         }
         IconButton(onClick = { onDelete(tx) }) {

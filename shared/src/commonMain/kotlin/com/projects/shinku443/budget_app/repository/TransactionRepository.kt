@@ -31,7 +31,7 @@ class TransactionRepository(
                 db.transactionQueries.insertOrReplace(
                     id = it.id,
                     amount = it.amount,
-                    categoryType = it.categoryType.name,
+                    type = it.type.name,
                     categoryId = it.categoryId,
                     date = it.date,
                     description = it.description,
@@ -49,7 +49,7 @@ class TransactionRepository(
         db.transactionQueries.insertOrReplace(
             id = created.id,
             amount = created.amount,
-            categoryType = created.categoryType.name,
+            type = created.type.name,
             categoryId = created.categoryId,
             date = created.date,
             description = created.description,

@@ -10,7 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import com.projects.shinku443.budget_app.viewmodel.AppTheme
+import com.projects.shinku443.budget_app.settings.Settings
 import com.projects.shinku443.budget_app.viewmodel.SettingsViewModel
 import org.koin.androidx.compose.getViewModel
 
@@ -40,9 +40,9 @@ class SettingsScreen : Screen {
             ) {
                 Text("Dark Theme")
                 Switch(
-                    checked = theme == AppTheme.Dark,
+                    checked = theme == Settings.Theme.DARK,
                     onCheckedChange = { checked ->
-                        viewModel.setTheme(if (checked) AppTheme.Dark else AppTheme.Light)
+                        viewModel.setTheme(if (checked) Settings.Theme.DARK else Settings.Theme.LIGHT)
                     }
                 )
             }

@@ -26,7 +26,6 @@ import org.koin.androidx.compose.koinViewModel
 import java.time.Month
 import java.time.format.TextStyle
 import java.util.*
-
 class DashboardScreen : Screen {
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
@@ -47,21 +46,21 @@ class DashboardScreen : Screen {
         var showPicker by remember { mutableStateOf(false) }
         var selectedYearMonth by remember { mutableStateOf(currentMonth) }
 
-        // Load current month when screen first appears
+        // Trigger initial sync when screen opens
         LaunchedEffect(Unit) {
-            viewModel.loadTransactions(currentMonth)
+            viewModel.refreshTransactions(currentMonth)
         }
 
         val onRefresh: () -> Unit = {
             coroutineScope.launch {
                 isRefreshing = true
-                viewModel.loadTransactions(currentMonth)
+                viewModel.refreshTransactions(currentMonth)
                 isRefreshing = false
             }
         }
 
         val pieChartData = remember(transactions) {
-            transactions.groupBy { it.categoryType.name }
+            transactions.groupBy { it.type.name }
                 .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
         }
 
@@ -73,7 +72,7 @@ class DashboardScreen : Screen {
             ),
             floatingActionButton = {
                 ExtendedFloatingActionButton(
-                    onClick = { /* navigator.push(AddTransactionScreen) */ },
+                    onClick = { navigator.push(AddTransactionScreen()) },
                     icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
                     text = { Text("Add Transaction") }
                 )
@@ -143,7 +142,7 @@ class DashboardScreen : Screen {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        viewModel.loadTransactions(selectedYearMonth)
+                        viewModel.refreshTransactions(selectedYearMonth)
                         showPicker = false
                     }) {
                         Text("OK")

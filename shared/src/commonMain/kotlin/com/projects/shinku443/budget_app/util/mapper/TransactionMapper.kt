@@ -8,7 +8,7 @@ fun DbTransaction.toDomain(): DomainTransaction =
     DomainTransaction(
         id = id,
         amount = amount,
-        categoryType = CategoryType.valueOf(categoryType),
+        type = CategoryType.valueOf(type),
         categoryId = categoryId,
         date = date,
         description = description,
@@ -19,7 +19,7 @@ fun DomainTransaction.toDb(): DbTransaction =
     DbTransaction(
         id = id,
         amount = amount,
-        categoryType = categoryType.name,
+        type = type.name,
         categoryId = categoryId,
         date = date,
         description = description,

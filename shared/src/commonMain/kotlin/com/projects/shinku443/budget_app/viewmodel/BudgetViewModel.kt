@@ -1,8 +1,8 @@
 package com.projects.shinku443.budget_app.viewmodel
 
-import com.projects.shinku443.budget_app.model.Category
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.projects.shinku443.budget_app.model.Category
 import com.projects.shinku443.budget_app.model.CategoryType
 import com.projects.shinku443.budget_app.model.Transaction
 import com.projects.shinku443.budget_app.repository.BudgetRepository
@@ -15,11 +15,12 @@ class BudgetViewModel(
     private val repository: BudgetRepository
 ) : ViewModel() {
 
-    private val _transactions = MutableStateFlow<List<Transaction>>(emptyList())
-    val transactions: StateFlow<List<Transaction>> = _transactions.asStateFlow()
+    // Observe directly from repository (DB-backed flows)
+    val transactions: StateFlow<List<Transaction>> = repository.observeTransactions()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private val _categories = MutableStateFlow<List<Category>>(emptyList())
-    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
+    val categories: StateFlow<List<Category>> = repository.observeCategories()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _currentMonth = MutableStateFlow(TimeWrapper.currentYearMonth())
     val currentMonth: YearMonth get() = _currentMonth.value
@@ -27,25 +28,19 @@ class BudgetViewModel(
     private val _monthlyBudgetGoal = MutableStateFlow(0.0f)
     val monthlyBudgetGoal: Float get() = _monthlyBudgetGoal.value
 
-    // Transactions
+    // Derived flows
     val expense: StateFlow<Double> = transactions.map { list ->
-        list.filter { tx ->
-            // expense categories
-            tx.categoryType == CategoryType.EXPENSE
-        }.sumOf { it.amount }
+        list.filter { it.type == CategoryType.EXPENSE }
+            .sumOf { it.amount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
 
     val monthlyExpenses: StateFlow<List<Transaction>> = transactions.map { list ->
-        list.filter { tx ->
-            tx.categoryType == CategoryType.EXPENSE
-        }
+        list.filter { it.type == CategoryType.EXPENSE }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
     val income: StateFlow<Double> = transactions.map { list ->
-        list.filter { tx ->
-            // income categories
-            tx.categoryType == CategoryType.INCOME
-        }.sumOf { it.amount }
+        list.filter { it.type == CategoryType.INCOME }
+            .sumOf { it.amount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
 
     val net: StateFlow<Double> = combine(income, expense) { inc, exp -> inc - exp }
@@ -59,24 +54,34 @@ class BudgetViewModel(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyMap())
 
-    fun loadTransactions(monthYear: YearMonth) {
+    // Refresh from API → DB
+    fun refreshTransactions(monthYear: YearMonth) {
         viewModelScope.launch {
             try {
-                val txs = repository.getTransactions(monthYear.toString())
-                _transactions.value = txs
+                repository.refreshTransactions(monthYear.toString())
                 _currentMonth.value = monthYear
             } catch (e: Exception) {
-                println("Failed to load transactions: ${e.message}")
-                _transactions.value = emptyList()
+                println("Failed to refresh transactions: ${e.message}")
             }
         }
     }
 
+    fun refreshCategories() {
+        viewModelScope.launch {
+            try {
+                repository.refreshCategories()
+            } catch (e: Exception) {
+                println("Failed to refresh categories: ${e.message}")
+            }
+        }
+    }
+
+    // Mutations: hit API + update DB
     fun addTransaction(tx: Transaction) {
         viewModelScope.launch {
             try {
                 repository.addTransaction(tx)
-                loadTransactions(_currentMonth.value)
+                refreshTransactions(_currentMonth.value)
             } catch (e: Exception) {
                 println("Failed to add transaction: ${e.message}")
             }
@@ -87,21 +92,9 @@ class BudgetViewModel(
         viewModelScope.launch {
             try {
                 repository.deleteTransaction(tx.id)
-                loadTransactions(_currentMonth.value)
+                refreshTransactions(_currentMonth.value)
             } catch (e: Exception) {
                 println("Failed to delete transaction: ${e.message}")
-            }
-        }
-    }
-
-    // Categories
-    fun loadCategories() {
-        viewModelScope.launch {
-            try {
-                _categories.value = repository.getCategories()
-            } catch (e: Exception) {
-                println("Failed to load categories: ${e.message}")
-                _categories.value = emptyList()
             }
         }
     }
@@ -109,8 +102,8 @@ class BudgetViewModel(
     fun addCategory(name: String, type: CategoryType) {
         viewModelScope.launch {
             try {
-                val cat = repository.createCategory(name, type)
-                _categories.value += cat
+                repository.createCategory(name, type)
+                refreshCategories()
             } catch (e: Exception) {
                 println("Failed to add category: ${e.message}")
             }
