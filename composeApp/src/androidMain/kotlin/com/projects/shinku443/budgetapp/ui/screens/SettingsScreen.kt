@@ -1,12 +1,20 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import cafe.adriel.voyager.core.screen.Screen
+import co.touchlab.kermit.Logger
+import com.projects.shinku443.budgetapp.notifications.scheduleTestReminder
 import com.projects.shinku443.budgetapp.settings.Settings.Theme
 import com.projects.shinku443.budgetapp.viewmodel.SettingsViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -33,6 +41,27 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
     val theme by viewModel.theme.collectAsState()
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val language by viewModel.language.collectAsState()
+    val context = LocalContext.current
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                Logger.d( "Notification permission granted")
+                scheduleTestReminder(context) // or scheduleDailyReminder(context)
+            } else {
+                Logger.d("Notification permission denied")
+            }
+        }
+    )
+
+    val showPermissionButton = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
+//    val shouldShowRationale = remember {
+//        activity?.let {
+//            ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS)
+//        } ?: false
+//    }
 
     Column(
         modifier = Modifier
@@ -40,6 +69,22 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
             .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        if (showPermissionButton) {
+            Button(
+                onClick = {
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Enable Notifications")
+            }
+        }
+        Button(
+            onClick = { scheduleTestReminder(context) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Test Notification")
+        }
         // Theme toggle
         Row(
             Modifier.fillMaxWidth(),

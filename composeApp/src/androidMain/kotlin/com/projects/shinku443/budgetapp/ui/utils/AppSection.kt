@@ -8,44 +8,44 @@ import cafe.adriel.voyager.core.screen.Screen
 import com.projects.shinku443.budgetapp.ui.reports.ReportsScreen
 import com.projects.shinku443.budgetapp.ui.screens.*
 
-sealed class AppSection(val label: String, val icon: ImageVector) : Screen {
+sealed class AppSection(val label: String, val iconName: String) : Screen {
 
-    class Dashboard : AppSection("Dashboard", Icons.Default.Home) {
+    class Dashboard : AppSection("Dashboard", "home") {
         @Composable
         override fun Content() {
             DashboardScreen().Content()
         }
     }
 
-    class Reports : AppSection("Reports", Icons.Default.BarChart) {
+    class Reports : AppSection("Reports", "reports") {
         @Composable
         override fun Content() {
             ReportsScreen().Content()
         }
     }
 
-    class Goals : AppSection("Goals", Icons.Default.Flag) {
+    class Goals : AppSection("Goals", "goals") {
         @Composable
         override fun Content() {
             BudgetGoalsScreen().Content()
         }
     }
 
-    class Categories : AppSection("Categories", Icons.Default.Category) {
+    class Categories : AppSection("Categories", "categories") {
         @Composable
         override fun Content() {
             CategoryManagerScreen().Content()
         }
     }
 
-    class Investments : AppSection("Investments", Icons.Default.TrendingUp) {
+    class Investments : AppSection("Investments", "investments") {
         @Composable
         override fun Content() {
             AddTransactionScreen().Content()
         } // placeholder
     }
 
-    class Settings : AppSection("Settings", Icons.Default.Settings) {
+    class Settings : AppSection("Settings", "settings") {
         @Composable
         override fun Content() {
             SettingsScreen().Content()

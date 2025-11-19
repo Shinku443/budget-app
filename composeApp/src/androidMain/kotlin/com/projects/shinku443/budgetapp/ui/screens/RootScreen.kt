@@ -5,15 +5,41 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.Navigator
+import com.projects.shinku443.budgetapp.settings.Settings
 import com.projects.shinku443.budgetapp.ui.utils.AppSection
+import com.projects.shinku443.budgetapp.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
+
+
+//Entry point to wrap in dark theme
+@Composable
+fun BudgetAppRoot(viewModel: SettingsViewModel = koinViewModel()) {
+    val theme by viewModel.theme.collectAsState()
+    val darkTheme = theme == Settings.Theme.DARK
+
+    MaterialTheme(
+        colorScheme = if (darkTheme) darkColorScheme() else lightColorScheme()
+    ) {
+        RootScreen()
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,6 +48,8 @@ fun RootScreen() {
 
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
+        val viewModel: SettingsViewModel = koinViewModel()
+        val theme by viewModel.theme.collectAsState()
 
         ModalNavigationDrawer(
             drawerState = drawerState,
@@ -41,9 +69,19 @@ fun RootScreen() {
                         AppSection.Investments(),
                         AppSection.Settings()
                     ).forEach { section ->
+                        val icon: ImageVector = when (section.iconName) {
+                            "home" -> Icons.Default.Home
+                            "reports" -> Icons.Default.BarChart
+                            "goals" -> Icons.Default.Flag
+                            "categories" -> Icons.Default.List
+                            "investments" -> Icons.Default.AttachMoney
+                            "settings" -> Icons.Default.Settings
+                            else -> Icons.Default.Info
+                        }
+
                         NavigationDrawerItem(
                             label = { Text(section.label) },
-                            icon = { Icon(section.icon, contentDescription = section.label) },
+                            icon = { Icon(icon, contentDescription = section.label) },
                             selected = navigator.lastItem::class == section::class,
                             onClick = {
                                 navigator.replace(section)

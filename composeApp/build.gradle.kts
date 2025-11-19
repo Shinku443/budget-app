@@ -43,6 +43,7 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.android.driver)
+            implementation("androidx.work:work-runtime-ktx:2.11.0")
         }
 
         commonMain.dependencies {
