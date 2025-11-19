@@ -6,6 +6,7 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlinx.datetime.Instant
 
 
 /**
@@ -21,6 +22,9 @@ object TimeWrapper {
         val date = today()
         return YearMonth(year = date.year, month = date.month.number)
     }
+
+    @OptIn(ExperimentalTime::class)
+    fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()
 
 
     fun formatMonthYear(monthYear: YearMonth): String {

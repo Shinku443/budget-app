@@ -20,26 +20,24 @@ class TransactionViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {
-        refreshTransactions()
+        syncAll()
     }
 
-    fun refreshTransactions() {
+    fun syncAll() {
         viewModelScope.launch {
-            syncService.syncTransactions() // API → DB reconciliation
+            syncService.syncAll()
         }
     }
 
     fun createTransaction(tx: Transaction) {
         viewModelScope.launch {
-            repo.createTransaction(tx)   // API + DB
-            syncService.syncTransactions()
+            repo.createTransaction(tx)
         }
     }
 
     fun deleteTransaction(id: String) {
         viewModelScope.launch {
-            repo.deleteTransaction(id)   // API + DB
-            syncService.syncTransactions()
+            repo.deleteTransaction(id)
         }
     }
 }

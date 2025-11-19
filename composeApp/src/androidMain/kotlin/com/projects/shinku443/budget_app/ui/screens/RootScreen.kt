@@ -42,6 +42,13 @@ fun RootScreen() {
             }
         }
 
+        fun resetAddTransactionState() {
+            newTransactionDescription = ""
+            newTransactionAmount = ""
+            newTransactionCategory = null
+            newTransactionDate = LocalDate.now()
+        }
+
         ModalNavigationDrawer(
             drawerState = drawerState,
             drawerContent = {
@@ -81,7 +88,10 @@ fun RootScreen() {
                         TopAppBar(
                             title = { Text("Add Transaction") },
                             navigationIcon = {
-                                IconButton(onClick = { navigator.pop() }) {
+                                IconButton(onClick = {
+                                    resetAddTransactionState()
+                                    navigator.pop()
+                                }) {
                                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                                 }
                             },
@@ -98,6 +108,7 @@ fun RootScreen() {
                                             createdAt = System.currentTimeMillis()
                                         )
                                         viewModel.addTransaction(tx)
+                                        resetAddTransactionState()
                                         navigator.pop()
                                     },
                                     enabled = isAddTransactionSaveEnabled

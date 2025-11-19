@@ -12,7 +12,8 @@ fun DbTransaction.toDomain(): DomainTransaction =
         categoryId = categoryId,
         date = date,
         description = description,
-        createdAt = createdAt
+        createdAt = createdAt,
+        isDeleted = is_deleted == 1L
     )
 
 fun DomainTransaction.toDb(): DbTransaction =
@@ -23,5 +24,6 @@ fun DomainTransaction.toDb(): DbTransaction =
         categoryId = categoryId,
         date = date,
         description = description,
-        createdAt = createdAt
+        createdAt = createdAt,
+        is_deleted = if (isDeleted) 1L else 0L
     )

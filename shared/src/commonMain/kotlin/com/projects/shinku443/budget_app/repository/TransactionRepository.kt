@@ -1,11 +1,12 @@
 package com.projects.shinku443.budget_app.repository
 
-
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import co.touchlab.kermit.Logger
 import com.projects.shinku443.budget_app.api.ApiClient
 import com.projects.shinku443.budget_app.db.BudgetDatabase
 import com.projects.shinku443.budget_app.model.Transaction
+import com.projects.shinku443.budget_app.util.mapper.toDb
 import com.projects.shinku443.budget_app.util.mapper.toDomain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -16,54 +17,53 @@ class TransactionRepository(
     private val api: ApiClient,
     private val db: BudgetDatabase
 ) {
-    // Reactive stream from local DB
+    private val transactionQueries = db.transactionQueries
+
     fun observeTransactions(): Flow<List<Transaction>> =
-        db.transactionQueries.selectAll()
+        transactionQueries.selectAll()
             .asFlow()
             .mapToList(Dispatchers.IO)
             .map { list -> list.map { it.toDomain() } }
 
-    // Online-first refresh
-    suspend fun refreshTransactions(): List<Transaction> {
-        return try {
-            val remote = api.get<List<Transaction>>("/transactions")
-            remote.forEach {
-                db.transactionQueries.insertOrReplace(
-                    id = it.id,
-                    amount = it.amount,
-                    type = it.type.name,
-                    categoryId = it.categoryId,
-                    date = it.date,
-                    description = it.description,
-                    createdAt = it.createdAt
-                )
-            }
-            remote
-        } catch (e: Exception) {
-            db.transactionQueries.selectAll().executeAsList().map { it.toDomain() }
-        }
-    }
-
     suspend fun createTransaction(tx: Transaction): Transaction {
-        val created = api.post<Transaction>("/transactions", tx)
-        db.transactionQueries.insertOrReplace(
-            id = created.id,
-            amount = created.amount,
-            type = created.type.name,
-            categoryId = created.categoryId,
-            date = created.date,
-            description = created.description,
-            createdAt = created.createdAt
-        )
-        return created
+        return try {
+            val created = api.post<Transaction>("/transactions", tx)
+            val dbTx = created.toDb()
+            transactionQueries.insertOrReplace(
+                id = dbTx.id,
+                amount = dbTx.amount,
+                type = dbTx.type,
+                categoryId = dbTx.categoryId,
+                date = dbTx.date,
+                description = dbTx.description,
+                createdAt = dbTx.createdAt,
+                is_deleted = 0
+            )
+            created
+        } catch (e: Exception) {
+            Logger.e("TransactionRepository") { "Failed to create transaction online, saving locally: ${e.message}" }
+            val dbTx = tx.toDb()
+            transactionQueries.insertOrReplace(
+                id = dbTx.id,
+                amount = dbTx.amount,
+                type = dbTx.type,
+                categoryId = dbTx.categoryId,
+                date = dbTx.date,
+                description = dbTx.description,
+                createdAt = dbTx.createdAt,
+                is_deleted = 0
+            )
+            tx
+        }
     }
 
     suspend fun deleteTransaction(id: String) {
         try {
             api.delete<Unit>("/transactions/$id")
-            db.transactionQueries.deleteById(id)
+            transactionQueries.deleteById(id)
         } catch (e: Exception) {
-            // optional: mark for deletion later
+            Logger.e("TransactionRepository") { "Failed to delete transaction online, marking for deletion: ${e.message}" }
+            transactionQueries.markAsDeleted(id)
         }
     }
 }

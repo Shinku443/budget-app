@@ -2,11 +2,14 @@ package com.projects.shinku443.budget_app.repository
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import co.touchlab.kermit.Logger
 import com.projects.shinku443.budget_app.api.ApiClient
 import com.projects.shinku443.budget_app.db.BudgetDatabase
 import com.projects.shinku443.budget_app.model.Category
 import com.projects.shinku443.budget_app.model.CategoryRequest
 import com.projects.shinku443.budget_app.model.CategoryType
+import com.projects.shinku443.budget_app.util.TimeWrapper
+import com.projects.shinku443.budget_app.util.mapper.toDb
 import com.projects.shinku443.budget_app.util.mapper.toDomain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -17,62 +20,95 @@ class CategoryRepository(
     private val api: ApiClient,
     private val db: BudgetDatabase
 ) {
-    // UI always observes local DB
+    private val categoryQueries = db.categoryQueries
+
     fun observeCategories(): Flow<List<Category>> =
-        db.categoryQueries.selectAll()
+        categoryQueries.selectAll()
             .asFlow()
             .mapToList(Dispatchers.IO)
             .map { it.map { dbCat -> dbCat.toDomain() } }
 
-    // Online-first refresh
-    suspend fun refreshCategories(): List<Category> {
+    suspend fun createCategory(name: String, type: CategoryType, isActive: Boolean): Category {
         return try {
-            val remote = api.get<List<Category>>("/categories")
-            remote.forEach {
-                db.categoryQueries.insertOrReplace(
-                    id = it.id,
-                    name = it.name,
-                    type = it.type.name,
-                    isActive = if (it.isActive) 1L else 0L,
-                    updatedAt = it.updatedAt
-                )
-            }
-            remote
+            val created = api.post<Category>("/categories", CategoryRequest(name, type, isActive))
+            val dbCat = created.toDb()
+            categoryQueries.insertOrReplace(
+                id = dbCat.id,
+                name = dbCat.name,
+                type = dbCat.type,
+                isActive = dbCat.isActive,
+                updatedAt = dbCat.updatedAt,
+                is_deleted = dbCat.is_deleted
+            )
+            created
         } catch (e: Exception) {
-            db.categoryQueries.selectAll().executeAsList().map { it.toDomain() }
+            Logger.e("CategoryRepository") { "Failed to create category online, saving locally: ${e.message}" }
+            val localCategory = Category(
+                id = "local_${TimeWrapper.currentTimeMillis()}",
+                name = name,
+                type = type,
+                isActive = isActive,
+                updatedAt = TimeWrapper.currentTimeMillis(),
+                isDeleted = false // Not deleted when created locally
+            )
+            val dbCat = localCategory.toDb()
+            categoryQueries.insertOrReplace(
+                id = dbCat.id,
+                name = dbCat.name,
+                type = dbCat.type,
+                isActive = dbCat.isActive,
+                updatedAt = dbCat.updatedAt,
+                is_deleted = dbCat.is_deleted
+            )
+            localCategory
         }
     }
 
-    suspend fun createCategory(name: String, type: CategoryType, isActive: Boolean): Category {
-        val created = api.post<Category>("/categories", CategoryRequest(name, type, isActive))
-        db.categoryQueries.insertOrReplace(
-            id = created.id,
-            name = created.name,
-            type = created.type.name,
-            isActive = if (created.isActive) 1L else 0L,
-            updatedAt = created.updatedAt
-        )
-        return created
-    }
-
     suspend fun updateCategory(id: String, name: String, type: CategoryType, isActive: Boolean): Category {
-        val updated = api.put<Category>("/categories/$id", CategoryRequest(name, type, isActive))
-        db.categoryQueries.insertOrReplace(
-            id = updated.id,
-            name = updated.name,
-            type = updated.type.name,
-            isActive = if (updated.isActive) 1L else 0L,
-            updatedAt = updated.updatedAt
-        )
-        return updated
+        return try {
+            val updated = api.put<Category>("/categories/$id", CategoryRequest(name, type, isActive))
+            val dbCat = updated.toDb()
+            categoryQueries.insertOrReplace(
+                id = dbCat.id,
+                name = dbCat.name,
+                type = dbCat.type,
+                isActive = dbCat.isActive,
+                updatedAt = dbCat.updatedAt,
+                is_deleted = dbCat.is_deleted
+            )
+            updated
+        } catch (e: Exception) {
+            Logger.e("CategoryRepository") { "Failed to update category online, updating locally: ${e.message}" }
+            // Fetch existing category to preserve isDeleted status if it was already marked for deletion
+            val existingCategory = categoryQueries.selectById(id).executeAsOneOrNull()?.toDomain()
+            val updatedCategory = Category(
+                id = id,
+                name = name,
+                type = type,
+                isActive = isActive,
+                updatedAt = TimeWrapper.currentTimeMillis(),
+                isDeleted = existingCategory?.isDeleted ?: false // Preserve existing deleted status
+            )
+            val dbCat = updatedCategory.toDb()
+            categoryQueries.insertOrReplace(
+                id = dbCat.id,
+                name = dbCat.name,
+                type = dbCat.type,
+                isActive = dbCat.isActive,
+                updatedAt = dbCat.updatedAt,
+                is_deleted = dbCat.is_deleted
+            )
+            updatedCategory
+        }
     }
 
     suspend fun deleteCategory(id: String) {
         try {
             api.delete<Unit>("/categories/$id")
-            db.categoryQueries.deleteById(id)
+            categoryQueries.deleteById(id)
         } catch (e: Exception) {
-            // optional: mark for deletion later
+            Logger.e("CategoryRepository") { "Failed to delete category online, marking for deletion: ${e.message}" }
+            categoryQueries.markAsDeleted(id)
         }
     }
 }

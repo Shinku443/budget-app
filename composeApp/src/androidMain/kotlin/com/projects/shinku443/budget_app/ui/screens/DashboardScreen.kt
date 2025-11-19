@@ -1,8 +1,6 @@
 package com.projects.shinku443.budget_app.ui.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -10,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import com.projects.shinku443.budget_app.ui.components.CategoryPieChart
 import com.projects.shinku443.budget_app.ui.components.TransactionList
@@ -21,6 +20,7 @@ import org.koin.androidx.compose.koinViewModel
 import java.time.Month
 import java.time.format.TextStyle
 import java.util.*
+
 class DashboardScreen : Screen {
 
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
@@ -28,26 +28,23 @@ class DashboardScreen : Screen {
     override fun Content() {
         val viewModel: BudgetViewModel = koinViewModel()
         val transactions by viewModel.transactions.collectAsState()
-        val monthlyExpenses by viewModel.monthlyExpenses.collectAsState()
-        val currentMonth = viewModel.currentMonth
+        val currentMonth by viewModel.currentMonth.collectAsState()
 
         var isRefreshing by remember { mutableStateOf(false) }
         val pullToRefreshState = rememberPullToRefreshState()
         val coroutineScope = rememberCoroutineScope()
 
-        // Month/year picker dialog state
         var showPicker by remember { mutableStateOf(false) }
-        var selectedYearMonth by remember { mutableStateOf(currentMonth) }
 
-        // Trigger initial sync when screen opens
+        // Trigger initial sync for the current month
         LaunchedEffect(Unit) {
-            viewModel.refreshTransactions(currentMonth)
+            viewModel.syncDataForMonth(currentMonth)
         }
 
         val onRefresh: () -> Unit = {
             coroutineScope.launch {
                 isRefreshing = true
-                viewModel.refreshTransactions(currentMonth)
+                viewModel.syncDataForMonth(currentMonth)
                 isRefreshing = false
             }
         }
@@ -66,6 +63,20 @@ class DashboardScreen : Screen {
                     onRefresh = onRefresh
                 ),
         ) {
+            // Month Selector Header
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = { showPicker = true }) {
+                    Text(
+                        text = "${Month.of(currentMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault())} ${currentMonth.year}",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            }
+
             Text(
                 modifier = Modifier.fillMaxWidth(),
                 text = "Total Expenses",
@@ -87,55 +98,81 @@ class DashboardScreen : Screen {
             }
         }
 
-        // Month/year picker dialog
         if (showPicker) {
-            AlertDialog(
-                onDismissRequest = { showPicker = false },
-                title = { Text("Select Month & Year") },
-                text = {
-                    Column {
-                        // Month dropdown
-                        var expandedMonth by remember { mutableStateOf(false) }
-                        TextButton(onClick = { expandedMonth = true }) {
-                            Text(Month.of(selectedYearMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault()))
-                        }
-                        DropdownMenu(expanded = expandedMonth, onDismissRequest = { expandedMonth = false }) {
-                            Month.values().forEach { m ->
-                                DropdownMenuItem(
-                                    text = { Text(m.getDisplayName(TextStyle.FULL, Locale.getDefault())) },
-                                    onClick = {
-                                        selectedYearMonth = YearMonth(selectedYearMonth.year, m.value)
-                                        expandedMonth = false
-                                    }
-                                )
-                            }
-                        }
-
-                        // Year input
-                        var yearText by remember { mutableStateOf(selectedYearMonth.year.toString()) }
-                        OutlinedTextField(
-                            value = yearText,
-                            onValueChange = { yearText = it },
-                            label = { Text("Year") }
-                        )
-                        selectedYearMonth =
-                            selectedYearMonth.copy(year = yearText.toIntOrNull() ?: selectedYearMonth.year)
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.refreshTransactions(selectedYearMonth)
-                        showPicker = false
-                    }) {
-                        Text("OK")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showPicker = false }) {
-                        Text("Cancel")
-                    }
+            MonthYearPickerDialog(
+                initialMonth = currentMonth,
+                onDismiss = { showPicker = false },
+                onConfirm = { selectedMonth ->
+                    viewModel.syncDataForMonth(selectedMonth)
+                    showPicker = false
                 }
             )
         }
     }
+}
+
+@Composable
+fun MonthYearPickerDialog(
+    initialMonth: YearMonth,
+    onDismiss: () -> Unit,
+    onConfirm: (YearMonth) -> Unit
+) {
+    var selectedMonth by remember { mutableStateOf(initialMonth) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Month & Year") },
+        text = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Month Dropdown
+                var monthExpanded by remember { mutableStateOf(false) }
+                Box {
+                    TextButton(onClick = { monthExpanded = true }) {
+                        Text(Month.of(selectedMonth.month).getDisplayName(TextStyle.SHORT, Locale.getDefault()))
+                    }
+                    DropdownMenu(expanded = monthExpanded, onDismissRequest = { monthExpanded = false }) {
+                        (1..12).forEach { monthVal ->
+                            DropdownMenuItem(
+                                text = { Text(Month.of(monthVal).getDisplayName(TextStyle.FULL, Locale.getDefault())) },
+                                onClick = {
+                                    selectedMonth = selectedMonth.copy(month = monthVal)
+                                    monthExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Year TextField
+                var yearText by remember(selectedMonth.year) { mutableStateOf(selectedMonth.year.toString()) }
+                OutlinedTextField(
+                    value = yearText,
+                    onValueChange = {
+                        yearText = it
+                        if (it.length == 4) {
+                            it.toIntOrNull()?.let { yearVal ->
+                                selectedMonth = selectedMonth.copy(year = yearVal)
+                            }
+                        }
+                    },
+                    label = { Text("Year") },
+                    modifier = Modifier.width(100.dp)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selectedMonth) }) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }

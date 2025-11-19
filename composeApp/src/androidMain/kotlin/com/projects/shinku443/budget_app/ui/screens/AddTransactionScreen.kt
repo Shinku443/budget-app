@@ -42,13 +42,14 @@ fun AddTransactionContent(
 ) {
     val viewModel: BudgetViewModel = koinViewModel()
     val categories by viewModel.categories.collectAsState()
+    val currentMonth by viewModel.currentMonth.collectAsState()
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showNewCategoryDialog by remember { mutableStateOf(false) }
 
     // Trigger API → DB sync when screen opens
     LaunchedEffect(Unit) {
-        viewModel.refreshCategories()
+        viewModel.syncDataForMonth(currentMonth)
     }
 
     Column(

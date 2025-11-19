@@ -27,18 +27,67 @@ class BudgetRepository(
         categoryQueries.selectAll().asFlow().map { it.executeAsList().map { it.toDomain() } }
 
     suspend fun refreshTransactions(month: String) {
-        val remote = api.get<List<Transaction>>("/transactions?month=$month")
-        remote.forEach { tx ->
-            val dbTx = tx.toDb()
-            transactionQueries.insertOrReplace(
-                id = dbTx.id,
-                amount = dbTx.amount,
-                categoryId = dbTx.categoryId,
-                date = dbTx.date,
-                description = dbTx.description,
-                type = dbTx.type,
-                createdAt = dbTx.createdAt
-            )
+        try {
+            val remoteTxs = api.get<List<Transaction>>("/transactions")
+            val remoteIds = remoteTxs.map { it.id }.toSet()
+
+            // Sync offline deletions
+            val deletedTxs = transactionQueries.selectAllIncludingDeleted().executeAsList().filter { it.is_deleted == 1L }
+            deletedTxs.forEach { tx ->
+                if (tx.id in remoteIds) {
+                    try {
+                        api.client.delete("${api.baseUrl}/transactions/${tx.id}")
+                        transactionQueries.deleteById(tx.id)
+                    } catch (e: Exception) {
+                        Logger.e("BudgetRepository") { "Failed to sync deleted transaction: ${e.message}" }
+                    }
+                } else {
+                    // Transaction was created and deleted offline, just remove it locally
+                    transactionQueries.deleteById(tx.id)
+                }
+            }
+
+
+            // Sync offline creations
+            val localTxs = transactionQueries.selectAll().executeAsList().map { it.toDomain() }
+            val offlineTxs = localTxs.filter { it.id !in remoteIds }
+            offlineTxs.forEach { offlineTx ->
+                try {
+                    val syncedTx = api.post<Transaction>("/transactions", offlineTx)
+                    transactionQueries.deleteById(offlineTx.id)
+                    val dbTx = syncedTx.toDb()
+                    transactionQueries.insertOrReplace(
+                        id = dbTx.id,
+                        amount = dbTx.amount,
+                        categoryId = dbTx.categoryId,
+                        date = dbTx.date,
+                        description = dbTx.description,
+                        type = dbTx.type,
+                        createdAt = dbTx.createdAt,
+                        is_deleted = 0
+                    )
+                } catch (e: Exception) {
+                    Logger.e("BudgetRepository") { "Failed to sync offline transaction: ${e.message}" }
+                }
+            }
+
+            // Final refresh from remote
+            val finalRemoteTxs = api.get<List<Transaction>>("/transactions?month=$month")
+            finalRemoteTxs.forEach { tx ->
+                val dbTx = tx.toDb()
+                transactionQueries.insertOrReplace(
+                    id = dbTx.id,
+                    amount = dbTx.amount,
+                    categoryId = dbTx.categoryId,
+                    date = dbTx.date,
+                    description = dbTx.description,
+                    type = dbTx.type,
+                    createdAt = dbTx.createdAt,
+                    is_deleted = 0
+                )
+            }
+        } catch (e: Exception) {
+            Logger.e("BudgetRepository") { "Failed to refresh transactions: ${e.message}" }
         }
     }
 
@@ -51,24 +100,42 @@ class BudgetRepository(
                 name = dbCat.name,
                 type = dbCat.type,
                 isActive = dbCat.isActive,
-                updatedAt = dbCat.updatedAt
+                updatedAt = dbCat.updatedAt,
+                is_deleted = dbCat.is_deleted
             )
         }
     }
 
     suspend fun addTransaction(tx: Transaction): Transaction {
-        val created = api.post<Transaction>("/transactions", tx)
-        val dbTx = created.toDb()
-        transactionQueries.insertOrReplace(
-            id = dbTx.id,
-            amount = dbTx.amount,
-            categoryId = dbTx.categoryId,
-            date = dbTx.date,
-            description = dbTx.description,
-            type = dbTx.type,
-            createdAt = dbTx.createdAt
-        )
-        return created
+        try {
+            val created = api.post<Transaction>("/transactions", tx)
+            val dbTx = created.toDb()
+            transactionQueries.insertOrReplace(
+                id = dbTx.id,
+                amount = dbTx.amount,
+                categoryId = dbTx.categoryId,
+                date = dbTx.date,
+                description = dbTx.description,
+                type = dbTx.type,
+                createdAt = dbTx.createdAt,
+                is_deleted = 0
+            )
+            return created
+        } catch (e: Exception) {
+            Logger.e("BudgetRepository") { "Failed to add transaction: ${e.message}" }
+            val dbTx = tx.toDb()
+            transactionQueries.insertOrReplace(
+                id = dbTx.id,
+                amount = dbTx.amount,
+                categoryId = dbTx.categoryId,
+                date = dbTx.date,
+                description = dbTx.description,
+                type = dbTx.type,
+                createdAt = dbTx.createdAt,
+                is_deleted = 0
+            )
+            return tx
+        }
     }
 
     suspend fun createCategory(name: String, type: CategoryType): Category {
@@ -80,6 +147,7 @@ class BudgetRepository(
             type = dbCat.type,
             isActive = dbCat.isActive,
             updatedAt = dbCat.updatedAt,
+            is_deleted = dbCat.is_deleted
         )
         return created
     }
@@ -87,14 +155,16 @@ class BudgetRepository(
     suspend fun deleteTransaction(id: String): Boolean {
         return try {
             val response = api.client.delete("${api.baseUrl}/transactions/$id")
-            if (response.status.value == 200) {
+            if (response.status.value in 200..299) {
                 transactionQueries.deleteById(id)
                 true
-            } else false
+            } else {
+                false
+            }
         } catch (e: Exception) {
-            Logger.e("BudgetRepository") { "Failed to delete transaction: ${e.message}" }
-            false
+            Logger.e("BudgetRepository") { "Failed to delete transaction, marking as deleted: ${e.message}" }
+            transactionQueries.markAsDeleted(id)
+            true
         }
     }
 }
-

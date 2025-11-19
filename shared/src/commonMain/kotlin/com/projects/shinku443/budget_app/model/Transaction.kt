@@ -10,5 +10,6 @@ data class Transaction(
     val categoryId: String,   // ✅ store just the ID
     val date: String,
     val description: String? = null,
-    val createdAt: Long
+    val createdAt: Long,
+    val isDeleted: Boolean = false
 )

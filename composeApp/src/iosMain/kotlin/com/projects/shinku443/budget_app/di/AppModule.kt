@@ -18,5 +18,5 @@ val appModule = module {
         }
     }
     single { ApiClient("http://127.0.0.1:8080", get()) }
-    single { BudgetRepository(get()) }
+    single { BudgetRepository(get(), get()) }
 }

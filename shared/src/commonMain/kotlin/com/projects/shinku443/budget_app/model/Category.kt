@@ -8,7 +8,8 @@ data class Category(
     val name: String,
     val type: CategoryType,
     val isActive: Boolean = true,
-    val updatedAt: Long
+    val updatedAt: Long? = null,
+    val isDeleted: Boolean = false
 )
 
 @Serializable

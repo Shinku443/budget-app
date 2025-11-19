@@ -20,33 +20,33 @@ class CategoryViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {
-        refreshCategories()
+        syncAll()
     }
 
-    fun refreshCategories() {
+    fun syncAll() {
         viewModelScope.launch {
-            syncService.syncCategories() // API → DB reconciliation
+            syncService.syncAll() // Trigger full sync
         }
     }
 
     fun createCategory(name: String, type: CategoryType) {
         viewModelScope.launch {
             repo.createCategory(name, type, isActive = true) // hits API + DB
-            syncService.syncCategories()
+            syncAll() // Re-sync after creation
         }
     }
 
     fun updateCategory(id: String, name: String, type: CategoryType, isActive: Boolean) {
         viewModelScope.launch {
             repo.updateCategory(id, name, type, isActive) // hits API + DB
-            syncService.syncCategories()
+            syncAll() // Re-sync after update
         }
     }
 
     fun deleteCategory(id: String) {
         viewModelScope.launch {
             repo.deleteCategory(id) // hits API + DB
-            syncService.syncCategories()
+            syncAll() // Re-sync after deletion
         }
     }
 
@@ -55,7 +55,7 @@ class CategoryViewModel(
             for (cat in list) {
                 repo.deleteCategory(cat)
             }
-            syncService.syncCategories()
+            syncAll() // Re-sync after multiple deletions
         }
     }
 }
