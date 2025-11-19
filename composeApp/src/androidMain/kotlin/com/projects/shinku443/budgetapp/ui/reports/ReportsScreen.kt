@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.projects.shinku443.budgetapp.ui.Util.ReportView
+import com.projects.shinku443.budgetapp.ui.utils.ReportView
 import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
 import org.koin.androidx.compose.koinViewModel
 

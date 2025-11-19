@@ -1,64 +1,167 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
-import com.projects.shinku443.budgetapp.settings.Settings
+import com.projects.shinku443.budgetapp.settings.Settings.Theme
 import com.projects.shinku443.budgetapp.viewmodel.SettingsViewModel
-import org.koin.androidx.compose.getViewModel
+import org.koin.androidx.compose.koinViewModel
+
+//Can use later for generic list render
+//sealed class SettingItem(val title: String) {
+//    object Theme : SettingItem("Theme")
+//    object Currency : SettingItem("Currency")
+//    object Notifications : SettingItem("Notifications")
+//    object Sync : SettingItem("Sync")
+//    object Login : SettingItem("Login")
+//    object Logout : SettingItem("Logout")
+//}
 
 class SettingsScreen : Screen {
-
     @Composable
     override fun Content() {
-        // If you’re using Koin for DI:
-        val viewModel: SettingsViewModel = getViewModel()
+        SettingsContent()
+    }
+}
 
-        val theme by viewModel.theme.collectAsState()
-        val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+@Composable
+fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
+    val theme by viewModel.theme.collectAsState()
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+    val language by viewModel.language.collectAsState()
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Theme toggle
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Settings", style = MaterialTheme.typography.titleLarge)
+            Text("Dark Theme")
+            Switch(
+                checked = theme == Theme.DARK,
+                onCheckedChange = { enabled ->
+                    viewModel.setTheme(if (enabled) Theme.DARK else Theme.LIGHT)
+                }
+            )
+        }
 
-            Spacer(Modifier.height(16.dp))
+        // Language selector (simple dropdown)
+        LanguageSelector(
+            current = language,
+            onSelect = { selected -> viewModel.setLanguage(selected) }
+        )
 
-            // Example toggle for dark/light theme
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Dark Theme")
-                Switch(
-                    checked = theme == Settings.Theme.DARK,
-                    onCheckedChange = { checked ->
-                        viewModel.setTheme(if (checked) Settings.Theme.DARK else Settings.Theme.LIGHT)
+        // Notifications toggle
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Notifications")
+            Switch(
+                checked = notificationsEnabled,
+                onCheckedChange = { viewModel.setNotificationsEnabled(it) }
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Auth stubs
+        Button(onClick = { println("Stub: Login flow") }, modifier = Modifier.fillMaxWidth()) {
+            Text("Login")
+        }
+        Button(onClick = { println("Stub: Logout flow") }, modifier = Modifier.fillMaxWidth()) {
+            Text("Logout")
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
+@Composable
+fun CurrencySelector(
+    current: String,
+    onSelect: (String) -> Unit
+) {
+    val options = listOf("USD", "EUR", "JPY")
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(current) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Currency") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        selected = option
+                        expanded = false
+                        onSelect(option)
                     }
                 )
             }
+        }
+    }
+}
 
-            Spacer(Modifier.height(16.dp))
 
-            // Example toggle for notifications
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Enable Notifications")
-                Switch(
-                    checked = notificationsEnabled,
-                    onCheckedChange = { checked ->
-                        viewModel.setNotificationsEnabled(checked)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LanguageSelector(current: String, onSelect: (String) -> Unit) {
+    val options = listOf("en", "es", "fr", "de", "kr", "cn")
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(current) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Language") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        selected = option
+                        expanded = false
+                        onSelect(option)
                     }
                 )
             }

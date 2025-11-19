@@ -1,4 +1,4 @@
-package com.projects.shinku443.budgetapp.ui.Util
+package com.projects.shinku443.budgetapp.ui.utils
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
