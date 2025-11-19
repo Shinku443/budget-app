@@ -34,7 +34,7 @@ fun CashFlowReport() {
             color = MaterialTheme.colorScheme.primary
         )
 
-        IncomeSpendingSankey()
+        IncomeToExpensesToCategoriesSankey()
     }
 
     Text("Income: $${income}", style = MaterialTheme.typography.bodyLarge)

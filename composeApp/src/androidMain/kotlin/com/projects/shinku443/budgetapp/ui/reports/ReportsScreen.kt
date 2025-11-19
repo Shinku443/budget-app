@@ -69,7 +69,7 @@ class ReportsScreen : Screen {
                     ReportView.OVERVIEW -> ReportsOverview()
                     ReportView.CASH_FLOW -> CashFlowReport()
                     ReportView.INCOME -> {}// IncomeReport()
-                    ReportView.SPENDING -> {}//SpendingReport()
+                    ReportView.SPENDING -> SpendingReport()
                 }
             }
 
