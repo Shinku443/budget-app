@@ -64,7 +64,7 @@ json
   "id": "uuid",
   "amount": 120.0,
   "categoryId": "groceries",
-  "categoryType": "EXPENSE",
+  "type": "EXPENSE",
   "date": "2025-11"
 }
 DELETE /transactions/{id} → Delete a transaction
