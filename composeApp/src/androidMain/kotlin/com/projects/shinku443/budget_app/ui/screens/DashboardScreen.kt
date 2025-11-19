@@ -3,9 +3,6 @@ package com.projects.shinku443.budget_app.ui.screens
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -14,8 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import com.projects.shinku443.budget_app.ui.components.CategoryPieChart
 import com.projects.shinku443.budget_app.ui.components.TransactionList
 import com.projects.shinku443.budget_app.util.YearMonth
@@ -40,8 +35,6 @@ class DashboardScreen : Screen {
         val pullToRefreshState = rememberPullToRefreshState()
         val coroutineScope = rememberCoroutineScope()
 
-        val navigator = LocalNavigator.currentOrThrow
-
         // Month/year picker dialog state
         var showPicker by remember { mutableStateOf(false) }
         var selectedYearMonth by remember { mutableStateOf(currentMonth) }
@@ -64,44 +57,33 @@ class DashboardScreen : Screen {
                 .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
         }
 
-        Scaffold(
-            modifier = Modifier.pullToRefresh(
-                state = pullToRefreshState,
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh
-            ),
-            floatingActionButton = {
-                ExtendedFloatingActionButton(
-                    onClick = { navigator.push(AddTransactionScreen()) },
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                    text = { Text("Add Transaction") }
+        Column(
+            Modifier
+                .fillMaxSize()
+                .pullToRefresh(
+                    state = pullToRefreshState,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh
+                ),
+        ) {
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                text = "Total Expenses",
+                textAlign = TextAlign.Center
+            )
+            if (pieChartData.isNotEmpty()) {
+                CategoryPieChart(
+                    data = pieChartData,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             }
-        ) { padding ->
-            Column(
-                Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
-            ) {
-                Text(
-                    modifier = Modifier.fillMaxWidth(),
-                    text = "Total Expenses",
-                    textAlign = TextAlign.Center
+            if (transactions.isEmpty()) {
+                Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                TransactionList(
+                    transactions = transactions,
+                    onDelete = { tx -> viewModel.deleteTransaction(tx) }
                 )
-                if (pieChartData.isNotEmpty()) {
-                    CategoryPieChart(
-                        data = pieChartData,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
-                }
-                if (transactions.isEmpty()) {
-                    Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
-                } else {
-                    TransactionList(
-                        transactions = transactions,
-                        onDelete = { tx -> viewModel.deleteTransaction(tx) }
-                    )
-                }
             }
         }
 
