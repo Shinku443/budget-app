@@ -1,7 +1,7 @@
 TEAM_ID=
 
-PRODUCT_NAME=budget_app
-PRODUCT_BUNDLE_IDENTIFIER=com.projects.shinku443.budget_app.budget_app$(TEAM_ID)
+PRODUCT_NAME=budgetapp
+PRODUCT_BUNDLE_IDENTIFIER=com.projects.shinku443.budgetapp.budgetapp$(TEAM_ID)
 
 CURRENT_PROJECT_VERSION=1
 MARKETING_VERSION=1.0

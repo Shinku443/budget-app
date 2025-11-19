@@ -87,11 +87,11 @@ kotlin {
 }
 
 android {
-    namespace = "com.projects.shinku443.budget_app"
+    namespace = "com.projects.shinku443.budgetapp"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.projects.shinku443.budget_app"
+        applicationId = "com.projects.shinku443.budgetapp"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		E498ECD004C07AE71CA70269 /* budget_app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = budget_app.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E498ECD004C07AE71CA70269 /* budgetapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = budgetapp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -59,7 +59,7 @@
 		5E1397876033E5F46D474DD5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E498ECD004C07AE71CA70269 /* budget_app.app */,
+				E498ECD004C07AE71CA70269 /* budgetapp.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosApp;
-			productReference = E498ECD004C07AE71CA70269 /* budget_app.app */;
+			productReference = E498ECD004C07AE71CA70269 /* budgetapp.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
