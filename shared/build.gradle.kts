@@ -46,6 +46,8 @@ kotlin {
             implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
             implementation("androidx.compose.material:material:1.4.0")
             implementation(libs.sqldelight.android.driver)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.coroutines.extensions)
         }
 
         iosMain.dependencies {
@@ -56,7 +58,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.projects.shinku443.budget_app.shared"
+    namespace = "com.projects.shinku443.budgetapp.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -70,7 +72,7 @@ android {
 sqldelight {
     databases {
         create("BudgetDatabase") {
-            packageName.set("com.projects.shinku443.budget_app.db")
+            packageName.set("com.projects.shinku443.budgetapp.db")
             verifyMigrations.set(false)
         }
     }

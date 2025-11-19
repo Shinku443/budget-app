@@ -1,0 +1,27 @@
+CREATE TABLE AppTransaction (
+  id TEXT NOT NULL PRIMARY KEY,
+  amount REAL NOT NULL,
+  type TEXT NOT NULL,
+  categoryId TEXT NOT NULL,
+  date TEXT NOT NULL,
+  description TEXT,
+  createdAt INTEGER NOT NULL,
+  is_deleted INTEGER NOT NULL DEFAULT 0
+);
+
+selectAll:
+SELECT * FROM AppTransaction WHERE is_deleted = 0;
+
+selectAllIncludingDeleted:
+SELECT * FROM AppTransaction;
+
+insertOrReplace:
+INSERT OR REPLACE INTO AppTransaction(
+  id, amount, type, categoryId, date, description, createdAt, is_deleted
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM AppTransaction WHERE id = ?;
+
+markAsDeleted:
+UPDATE AppTransaction SET is_deleted = 1 WHERE id = ?;

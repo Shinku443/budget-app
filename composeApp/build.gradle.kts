@@ -41,6 +41,8 @@ kotlin {
             implementation("io.insert-koin:koin-androidx-compose:$koinVersion")
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.sqldelight.runtime)
+            implementation(libs.sqldelight.android.driver)
         }
 
         commonMain.dependencies {
@@ -71,7 +73,6 @@ kotlin {
 
             implementation("androidx.datastore:datastore:1.1.7")
             implementation("androidx.datastore:datastore-preferences:1.1.7")
-
         }
 
 
@@ -86,11 +87,11 @@ kotlin {
 }
 
 android {
-    namespace = "com.projects.shinku443.budget_app"
+    namespace = "com.projects.shinku443.budgetapp"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.projects.shinku443.budget_app"
+        applicationId = "com.projects.shinku443.budgetapp"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1

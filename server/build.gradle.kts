@@ -4,10 +4,10 @@ plugins {
     application
 }
 
-group = "com.projects.shinku443.budget_app"
+group = "com.projects.shinku443.budgetapp"
 version = "1.0.0"
 application {
-    mainClass.set("com.projects.shinku443.budget_app.ApplicationKt")
+    mainClass.set("com.projects.shinku443.budgetapp.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")

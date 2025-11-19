@@ -1,0 +1,27 @@
+-- Table for storing monthly budget goals
+CREATE TABLE budgetGoal (
+    id TEXT NOT NULL PRIMARY KEY,   -- e.g. "2025-11" or UUID
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL,         -- 1–12
+    amount REAL NOT NULL,           -- target budget amount
+    updatedAt INTEGER NOT NULL      -- timestamp for sync conflict resolution
+);
+
+-- Query: select goal by year/month
+selectByMonth:
+SELECT * FROM budgetGoal
+WHERE year = ? AND month = ?;
+
+-- Query: insert or replace goal
+insertOrReplace:
+INSERT OR REPLACE INTO budgetGoal(id, year, month, amount, updatedAt)
+VALUES (?, ?, ?, ?, ?);
+
+-- Query: delete goal by year/month
+deleteByMonth:
+DELETE FROM budgetGoal
+WHERE year = ? AND month = ?;
+
+-- Query: get all goals (for sync or reporting)
+selectAll:
+SELECT * FROM budgetGoal;
