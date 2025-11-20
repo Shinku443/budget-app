@@ -25,14 +25,13 @@ class SettingsViewModel(
     val language: StateFlow<String> = settingsRepo.language
         .stateIn(viewModelScope, SharingStarted.Eagerly, "en")
 
+    val loggedIn: StateFlow<Boolean> = settingsRepo.loggedIn
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     // Update methods
     fun setTheme(theme: Theme) {
         viewModelScope.launch { settingsRepo.setTheme(theme) }
     }
-//
-//    fun setNotificationsEnabled(enabled: Boolean) {
-//        viewModelScope.launch { settingsRepo.setNotificationsEnabled(enabled) }
-//    }
 
     fun setNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch {
@@ -44,5 +43,9 @@ class SettingsViewModel(
 
     fun setLanguage(language: String) {
         viewModelScope.launch { settingsRepo.setLanguage(language) }
+    }
+
+    fun setLoggedIn(isLoggedIn: Boolean) {
+        viewModelScope.launch { settingsRepo.setLoggedIn(isLoggedIn) }
     }
 }

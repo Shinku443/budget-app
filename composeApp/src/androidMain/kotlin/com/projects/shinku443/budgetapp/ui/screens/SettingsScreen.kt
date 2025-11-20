@@ -11,12 +11,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
+import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import co.touchlab.kermit.Logger
+import com.projects.shinku443.budgetapp.notifications.cancelDailyReminder
+import com.projects.shinku443.budgetapp.notifications.scheduleDailyReminder
 import com.projects.shinku443.budgetapp.notifications.scheduleTestReminder
 import com.projects.shinku443.budgetapp.settings.Settings.Theme
 import com.projects.shinku443.budgetapp.viewmodel.SettingsViewModel
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 //Can use later for generic list render
@@ -47,7 +50,7 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
-                Logger.d( "Notification permission granted")
+                Logger.d("Notification permission granted")
                 scheduleTestReminder(context) // or scheduleDailyReminder(context)
             } else {
                 Logger.d("Notification permission denied")
@@ -69,22 +72,20 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
             .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        if (showPermissionButton) {
-            Button(
-                onClick = {
+        val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+
+        Switch(
+            checked = notificationsEnabled,
+            onCheckedChange = { enabled ->
+                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Enable Notifications")
+                } else {
+                    viewModel.setNotificationsEnabled(enabled)
+                    if (enabled) scheduleDailyReminder(context) else cancelDailyReminder(context)
+                }
             }
-        }
-        Button(
-            onClick = { scheduleTestReminder(context) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Test Notification")
-        }
+        )
+
         // Theme toggle
         Row(
             Modifier.fillMaxWidth(),
@@ -122,11 +123,12 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
         Spacer(Modifier.height(16.dp))
 
         // Auth stubs
-        Button(onClick = { println("Stub: Login flow") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Login")
-        }
-        Button(onClick = { println("Stub: Logout flow") }, modifier = Modifier.fillMaxWidth()) {
-            Text("Logout")
+
+        Button(
+            onClick = {  viewModel.setLoggedIn(false) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Log out")
         }
     }
 }

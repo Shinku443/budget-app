@@ -8,4 +8,5 @@ object SettingsKeys {
     val THEME = stringPreferencesKey("theme")
     val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
     val LANGUAGE = stringPreferencesKey("language")
+    val LOGGED_IN = booleanPreferencesKey("logged_in")
 }
