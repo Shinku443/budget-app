@@ -1,8 +1,8 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -28,8 +28,8 @@ import java.util.*
 
 
 class DashboardScreen : Screen {
-    @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
     @Composable
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: BudgetViewModel = koinViewModel()
@@ -43,6 +43,7 @@ class DashboardScreen : Screen {
         var showPicker by remember { mutableStateOf(false) }
         val syncStatus by viewModel.syncStatus.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
+        var showAddTransaction by remember { mutableStateOf(false) }
 
         // Show sync status as snackbar
         LaunchedEffect(syncStatus) {
@@ -88,69 +89,120 @@ class DashboardScreen : Screen {
                 .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
         }
 
+        var selectedTab by remember { mutableStateOf(0) }
+        val tabs = listOf("Transactions", "Categories", "Trends", "Budgets")
+        Scaffold(
+            floatingActionButton = {
+                if (selectedTab == 0) { // Transactions tab
+                    ExtendedFloatingActionButton(
+                        onClick = { showAddTransaction = true },
+                        containerColor = MaterialTheme.colorScheme.primary,
 
-        Column(
-            Modifier
-                .fillMaxSize()
-                .pullToRefresh(
-                    state = pullToRefreshState,
-                    isRefreshing = isRefreshing,
-                    onRefresh = onRefresh
-                ),
-        ) {
-            // Month Selector Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = { showPicker = true }) {
-                    Text(
-                        text = "${
-                            Month.of(currentMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault())
-                        } ${currentMonth.year}",
-                        style = MaterialTheme.typography.titleLarge
+//                        onClick = { navigator.push(AddTransactionScreen()) },
+                        icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
+                        text = { Text("Add Transaction") }
                     )
                 }
             }
-
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = "Total Expenses",
-                textAlign = TextAlign.Center
-            )
-
-            if (pieChartData.isNotEmpty()) {
-                CategoryPieChart(
-                    data = pieChartData,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-            }
-
-            if (transactions.isEmpty()) {
-                Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
-            } else {
-                TransactionList(
-                    transactions = transactions,
-                    onDelete = { tx -> viewModel.deleteTransaction(tx) }
-                )
-            }
-        }
-
-
-        if (showPicker) {
-            MonthYearPickerDialog(
-                initialMonth = currentMonth,
-                onDismiss = { showPicker = false },
-                onConfirm = { selectedMonth ->
-                    viewModel.syncDataForMonth(selectedMonth)
-                    showPicker = false
+        ) { innerPadding ->
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .pullToRefresh(
+                        state = pullToRefreshState,
+                        isRefreshing = isRefreshing,
+                        onRefresh = onRefresh
+                    ),
+            ) {
+                // Month Selector Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = { showPicker = true }) {
+                        Text(
+                            text = "${
+                                Month.of(currentMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault())
+                            } ${currentMonth.year}",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
                 }
-            )
+
+                // Tabs
+                TabRow(selectedTabIndex = selectedTab) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                when (selectedTab) {
+                    0 -> {
+                        if (transactions.isEmpty()) {
+                            Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
+                        } else {
+                            TransactionList(
+                                transactions = transactions,
+                                onDelete = { tx -> viewModel.deleteTransaction(tx) }
+                            )
+                        }
+                    }
+
+                    1 -> {
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = "Total Expenses",
+                            textAlign = TextAlign.Center
+                        )
+                        if (pieChartData.isNotEmpty()) {
+                            CategoryPieChart(
+                                data = pieChartData,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+                        }
+                    }
+
+                    2 -> {
+                        // Placeholder for trends chart
+                        Text("Trends chart goes here", modifier = Modifier.align(Alignment.CenterHorizontally))
+                    }
+
+                    3 -> {
+                        // Placeholder for budgets progress
+                        Text("Budget progress bars go here", modifier = Modifier.align(Alignment.CenterHorizontally))
+                    }
+                }
+            }
+
+            if (showPicker) {
+                MonthYearPickerDialog(
+                    initialMonth = currentMonth,
+                    onDismiss = { showPicker = false },
+                    onConfirm = { selectedMonth ->
+                        viewModel.syncDataForMonth(selectedMonth)
+                        showPicker = false
+                    }
+                )
+            }
         }
+
+        if (showAddTransaction) {
+            ModalBottomSheet(
+                onDismissRequest = { showAddTransaction = false }
+            ) {
+                AddTransactionScreen().Content()
+            }
     }
+}
 }
 
 @Composable

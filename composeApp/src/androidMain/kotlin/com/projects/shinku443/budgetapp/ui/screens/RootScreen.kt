@@ -106,15 +106,6 @@ fun RootScreen() {
                         )
                     )
                 },
-                floatingActionButton = {
-                    if (navigator.lastItem is AppSection.Dashboard) {
-                        ExtendedFloatingActionButton(
-                            onClick = { navigator.push(AddTransactionScreen()) },
-                            icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                            text = { Text("Add Transaction") }
-                        )
-                    }
-                }
             ) { innerPadding ->
                 Box(
                     Modifier
