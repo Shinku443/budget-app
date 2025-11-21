@@ -74,8 +74,7 @@ class BudgetGoalsScreen : Screen {
                 onClick = {
                     val parsed = newGoalText.toFloatOrNull()
                     if (parsed != null && parsed > 0f) {
-                        // Update goal in ViewModel
-                        // viewModel.setMonthlyBudgetGoal(parsed)
+                        viewModel.setMonthlyBudgetGoal(parsed)
                         navigator.pop()
                     }
                 },

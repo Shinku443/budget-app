@@ -74,17 +74,7 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
     ) {
         val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
 
-        Switch(
-            checked = notificationsEnabled,
-            onCheckedChange = { enabled ->
-                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } else {
-                    viewModel.setNotificationsEnabled(enabled)
-                    if (enabled) scheduleDailyReminder(context) else cancelDailyReminder(context)
-                }
-            }
-        )
+
 
         // Theme toggle
         Row(
@@ -114,9 +104,20 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("Notifications")
+//            Switch(
+//                checked = notificationsEnabled,
+//                onCheckedChange = { viewModel.setNotificationsEnabled(it) }
+//            )
             Switch(
                 checked = notificationsEnabled,
-                onCheckedChange = { viewModel.setNotificationsEnabled(it) }
+                onCheckedChange = { enabled ->
+                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        viewModel.setNotificationsEnabled(enabled)
+                        if (enabled) scheduleDailyReminder(context) else cancelDailyReminder(context)
+                    }
+                }
             )
         }
 
