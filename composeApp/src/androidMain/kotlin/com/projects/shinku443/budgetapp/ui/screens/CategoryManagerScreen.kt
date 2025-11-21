@@ -1,10 +1,12 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,15 +36,24 @@ class CategoryManagerScreen : Screen {
         var name by remember { mutableStateOf("") }
         var categoryType by remember { mutableStateOf(CategoryType.EXPENSE) }
         var selectedIconName by remember { mutableStateOf<String?>(null) }
-        var selectedColorLong by remember { mutableStateOf(0xFF64B5F6) }
+        var selectedColorLong by remember { mutableStateOf(0L) }
+        var editMode by remember { mutableStateOf(false) }
 
         val tintColor = Color(selectedColorLong)
 
-        // Discover icons dynamically (or provide curated list)
         val icons = remember { discoverCategoryIconsByPrefix("ic_category_") }
 
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Manage Categories") }) },
+            topBar = {
+                TopAppBar(
+                    title = { Text("Manage Categories") },
+                    actions = {
+                        IconButton(onClick = { editMode = !editMode }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Toggle edit mode")
+                        }
+                    }
+                )
+            },
             snackbarHost = { SnackbarHost(remember { SnackbarHostState() }) }
         ) { padding ->
             LazyColumn(
@@ -52,6 +63,30 @@ class CategoryManagerScreen : Screen {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(16.dp)
             ) {
+                // Category chips at the top
+                item {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        categories.forEach { category ->
+                            if (editMode) {
+                                EditableCategoryChip(
+                                    category = category,
+                                    onRename = { newName ->
+                                        viewModel.renameCategory(category.id, newName)
+                                    },
+                                    onDelete = {
+                                        viewModel.deleteCategory(category.id)
+                                    }
+                                )
+                            } else {
+                                CategoryChip(category = category, selected = false, onClick = {})
+                            }
+                        }
+                    }
+                }
+
                 // Create Category Form
                 item {
                     ElevatedCard(
@@ -90,9 +125,10 @@ class CategoryManagerScreen : Screen {
                                 tintColor = tintColor
                             )
 
+                            // Color picker with transparent + custom option
                             ColorPicker(
                                 selectedColor = selectedColorLong,
-                                onSelectColor = { selectedColorLong = it }
+                                onSelectColor = { selectedColorLong = it },
                             )
 
                             Button(
@@ -116,56 +152,21 @@ class CategoryManagerScreen : Screen {
                         }
                     }
                 }
-
-                // Existing Categories
-                item {
-                    Text("Your categories", style = MaterialTheme.typography.titleMedium)
-                }
-
-                items(categories) { c ->
-                    ElevatedCard(
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CategoryChip(category = c, selected = false, onClick = {})
-                            AssistChip(
-                                onClick = { /* future: edit */ },
-                                label = { Text("Edit") },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                                }
-                            )
-                        }
-                    }
-                }
             }
         }
     }
 }
 
-
 @Composable
 fun CategoryChip(category: Category, selected: Boolean, onClick: () -> Unit) {
     val context = LocalContext.current
-
     FilterChip(
         selected = selected,
         onClick = onClick,
         label = { Text(category.name) },
         leadingIcon = {
             category.icon?.let { iconName ->
-                val resId = context.resources.getIdentifier(
-                    iconName, // e.g. "ic_category_groceries"
-                    "drawable",
-                    context.packageName
-                )
+                val resId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
                 if (resId != 0) {
                     Icon(
                         painterResource(resId),
@@ -181,4 +182,33 @@ fun CategoryChip(category: Category, selected: Boolean, onClick: () -> Unit) {
     )
 }
 
-
+@Composable
+fun EditableCategoryChip(
+    category: Category,
+    onRename: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var text by remember { mutableStateOf(category.name) }
+    FilterChip(
+        selected = false,
+        onClick = {},
+        label = {
+            TextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                    onRename(it)
+                },
+                singleLine = true,
+                modifier = Modifier.width(100.dp)
+            )
+        },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Delete",
+                modifier = Modifier.clickable { onDelete() }
+            )
+        }
+    )
+}

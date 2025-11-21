@@ -22,6 +22,7 @@ sqlDelight = "2.2.1"
 foundation = "1.9.4"
 workRuntimeKtx = "2.11.0"
 animation = "1.9.5"
+colorpicker = "1.1.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -48,6 +49,7 @@ sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", versi
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
+compose-colorpicker = { module = "com.github.skydoves:colorpicker-compose", version.ref = "colorpicker" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

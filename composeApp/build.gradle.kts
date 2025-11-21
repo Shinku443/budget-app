@@ -1,4 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -44,7 +43,8 @@ kotlin {
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.android.driver)
             implementation("androidx.work:work-runtime-ktx:2.11.0")
-        }
+            implementation(libs.compose.colorpicker)
+           }
 
         commonMain.dependencies {
             implementation(compose.runtime)

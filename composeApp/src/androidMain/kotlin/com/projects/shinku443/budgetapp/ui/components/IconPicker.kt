@@ -118,7 +118,7 @@ fun SelectableIcon(
                 Icon(
                     painter = painterResource(resId),
                     contentDescription = iconName,
-                    tint = tintColor,
+                    tint = if (tintColor.alpha == 0f) Color.Unspecified else tintColor,
                     modifier = Modifier.size(32.dp)
                 )
             }

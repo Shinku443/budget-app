@@ -15,8 +15,8 @@ SELECT * FROM Category WHERE is_deleted = 0;
 selectAllIncludingDeleted:
 SELECT * FROM Category;
 
- selectById:
- SELECT * FROM Category WHERE id = ?;
+selectById:
+SELECT * FROM Category WHERE id = ?;
 
 insertOrReplace:
 INSERT OR REPLACE INTO Category(id, name, type, isActive, updatedAt, is_deleted, color, icon)
@@ -31,6 +31,8 @@ DELETE FROM Category WHERE id IN ?;
 markAsDeleted:
 UPDATE Category SET is_deleted = 1 WHERE id = ?;
 
-
 markAsDeletedByIds:
 UPDATE Category SET is_deleted = 1 WHERE id IN ?;
+
+renameCategory:
+UPDATE Category SET name = ? WHERE id = ?;

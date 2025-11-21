@@ -51,6 +51,13 @@ class CategoryViewModel(
         }
     }
 
+    fun renameCategory(id: String, newName: String) {
+        viewModelScope.launch {
+            repo.renameCategory(id, newName)
+            syncAll()
+        }
+    }
+
     fun deleteCategory(id: String) {
         viewModelScope.launch {
             repo.deleteCategory(id) // hits API + DB

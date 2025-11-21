@@ -112,6 +112,54 @@ class CategoryRepository(
         }
     }
 
+    suspend fun renameCategory(id: String, newName: String): Category {
+        return try {
+            val updated = api.patch<Category>("/categories/$id", mapOf("name" to newName))
+            val dbCat = updated.toDb()
+            categoryQueries.insertOrReplace(
+                id = dbCat.id,
+                name = dbCat.name,
+                type = dbCat.type,
+                isActive = dbCat.isActive,
+                updatedAt = dbCat.updatedAt,
+                is_deleted = dbCat.is_deleted,
+                color = dbCat.color,
+                icon = dbCat.icon
+            )
+            updated
+        } catch (e: Exception) {
+            Logger.e("CategoryRepository") { "Failed to rename category online, updating locally: ${e.message}" }
+            val existing = categoryQueries.selectById(id).executeAsOneOrNull()?.toDomain()
+            val renamed = existing?.copy(
+                name = newName,
+                updatedAt = TimeWrapper.currentTimeMillis()
+            ) ?: Category(
+                id = id,
+                name = newName,
+                type = CategoryType.EXPENSE,
+                isActive = true,
+                updatedAt = TimeWrapper.currentTimeMillis(),
+                isDeleted = false,
+                color = 0xFF64B5F6,
+                icon = null
+            )
+            val dbCat = renamed.toDb()
+            categoryQueries.insertOrReplace(
+                id = dbCat.id,
+                name = dbCat.name,
+                type = dbCat.type,
+                isActive = dbCat.isActive,
+                updatedAt = dbCat.updatedAt,
+                is_deleted = dbCat.is_deleted,
+                color = dbCat.color,
+                icon = dbCat.icon
+            )
+            renamed
+        }
+    }
+
+
+
     suspend fun deleteCategory(id: String) {
         try {
             api.delete<Unit>("/categories/$id")
