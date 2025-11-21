@@ -1,16 +1,14 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -19,9 +17,10 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import com.projects.shinku443.budgetapp.model.Category
 import com.projects.shinku443.budgetapp.model.CategoryType
-import com.projects.shinku443.budgetapp.ui.utils.iconNameToRes
+import com.projects.shinku443.budgetapp.ui.components.ColorPicker
+import com.projects.shinku443.budgetapp.ui.components.IconPicker
+import com.projects.shinku443.budgetapp.ui.utils.discoverCategoryIconsByPrefix
 import com.projects.shinku443.budgetapp.viewmodel.CategoryViewModel
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 class CategoryManagerScreen : Screen {
@@ -31,131 +30,126 @@ class CategoryManagerScreen : Screen {
     override fun Content() {
         val viewModel: CategoryViewModel = koinViewModel()
         val categories by viewModel.categories.collectAsState()
-        val snackbarHostState = remember { SnackbarHostState() }
-        val coroutineScope = rememberCoroutineScope()
 
         var name by remember { mutableStateOf("") }
         var categoryType by remember { mutableStateOf(CategoryType.EXPENSE) }
-        var selectedColor by remember { mutableStateOf(0xFF64B5F6) }
-        var selectedIcon by remember { mutableStateOf("ic_food") }
-        val selectedIds = remember { mutableStateListOf<String>() }
+        var selectedIconName by remember { mutableStateOf<String?>(null) }
+        var selectedColorLong by remember { mutableStateOf(0xFF64B5F6) }
 
-        val availableColors = listOf(0xFFE57373, 0xFF64B5F6, 0xFF81C784, 0xFFFFB74D, 0xFFBA68C8)
-        val availableIcons = listOf("ic_food", "ic_home", "ic_transport", "ic_shopping", "ic_savings")
+        val tintColor = Color(selectedColorLong)
 
-        Column(
-            Modifier
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text("Create Category", style = MaterialTheme.typography.titleLarge)
+        // Discover icons dynamically (or provide curated list)
+        val icons = remember { discoverCategoryIconsByPrefix("ic_category_") }
 
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Category Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = categoryType == CategoryType.EXPENSE,
-                    onClick = { categoryType = CategoryType.EXPENSE },
-                    label = { Text("Expense") }
-                )
-                FilterChip(
-                    selected = categoryType == CategoryType.INCOME,
-                    onClick = { categoryType = CategoryType.INCOME },
-                    label = { Text("Income") }
-                )
-            }
-
-            Text("Pick Color")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                availableColors.forEach { color ->
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(color), shape = CircleShape)
-                            .border(
-                                width = if (selectedColor == color) 3.dp else 1.dp,
-                                color = if (selectedColor == color) Color.Black else Color.Gray,
-                                shape = CircleShape
+        Scaffold(
+            topBar = { TopAppBar(title = { Text("Manage Categories") }) },
+            snackbarHost = { SnackbarHost(remember { SnackbarHostState() }) }
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                // Create Category Form
+                item {
+                    ElevatedCard(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = name,
+                                onValueChange = { name = it },
+                                label = { Text("Category name") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
                             )
-                            .clickable { selectedColor = color }
-                    )
-                }
-            }
 
-            Text("Pick Icon")
-            var expanded by remember { mutableStateOf(false) }
-            ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                OutlinedTextField(
-                    value = selectedIcon,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Icon") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    availableIcons.forEach { icon ->
-                        DropdownMenuItem(
-                            text = { Text(icon) },
-                            onClick = {
-                                selectedIcon = icon
-                                expanded = false
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilterChip(
+                                    selected = categoryType == CategoryType.EXPENSE,
+                                    onClick = { categoryType = CategoryType.EXPENSE },
+                                    label = { Text("Expense") }
+                                )
+                                FilterChip(
+                                    selected = categoryType == CategoryType.INCOME,
+                                    onClick = { categoryType = CategoryType.INCOME },
+                                    label = { Text("Income") }
+                                )
                             }
-                        )
+
+                            IconPicker(
+                                icons = icons,
+                                selectedIconName = selectedIconName,
+                                onSelect = { selectedIconName = it },
+                                tintColor = tintColor
+                            )
+
+                            ColorPicker(
+                                selectedColor = selectedColorLong,
+                                onSelectColor = { selectedColorLong = it }
+                            )
+
+                            Button(
+                                onClick = {
+                                    if (name.isNotBlank() && selectedIconName != null) {
+                                        viewModel.createCategory(
+                                            name = name,
+                                            type = categoryType,
+                                            color = selectedColorLong,
+                                            icon = selectedIconName
+                                        )
+                                        name = ""
+                                        selectedIconName = null
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = name.isNotBlank() && selectedIconName != null
+                            ) {
+                                Text("Add category")
+                            }
+                        }
                     }
                 }
-            }
 
-            Button(onClick = {
-                if (name.isNotBlank()) {
-                    viewModel.createCategory(name, categoryType, selectedColor, selectedIcon)
-                    name = ""
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Category added")
-                    }
+                // Existing Categories
+                item {
+                    Text("Your categories", style = MaterialTheme.typography.titleMedium)
                 }
-            }) {
-                Text("Add Category")
-            }
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(categories) { c ->
-                    CategoryChip(
-                        category = c,
-                        selected = selectedIds.contains(c.id),
-                        onClick = {
-                            if (selectedIds.contains(c.id)) selectedIds.remove(c.id)
-                            else selectedIds.add(c.id)
+                    ElevatedCard(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CategoryChip(category = c, selected = false, onClick = {})
+                            AssistChip(
+                                onClick = { /* future: edit */ },
+                                label = { Text("Edit") },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                }
+                            )
                         }
-                    )
-                }
-            }
-
-            if (selectedIds.isNotEmpty()) {
-                Button(
-                    onClick = {
-                        viewModel.deleteCategories(selectedIds.toList())
-                        selectedIds.clear()
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Deleted categories")
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                    Spacer(Modifier.width(4.dp))
-                    Text("Delete Selected")
+                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun CategoryChip(category: Category, selected: Boolean, onClick: () -> Unit) {

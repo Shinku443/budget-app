@@ -26,7 +26,9 @@ data class CategoryRequest(
 data class CategoryPreset(
     val displayName: String,
     val iconName: String, // e.g. "ic_category_groceries"
-    val color: Long
+    val color: Long,
+    val tintable: Boolean = true,
+    val tintDominantOnly: Boolean = false
 )
 
 val categoryPresets = listOf(
