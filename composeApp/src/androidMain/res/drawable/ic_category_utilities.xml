@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="24.0"
+        android:viewportHeight="24.0">
+    <!-- Bulb Glass (Yellow) -->
+    <path
+            android:fillColor="#FFEB3B"
+            android:pathData="M9,21c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-1H9V21z M12,2C8.14,2 5,5.14 5,9c0,2.38 1.19,4.47 3,5.74V17c0,0.55 0.45,1 1,1h6c0.55,0 1,-0.45 1,-1v-2.26c1.81,-1.27 3,-3.36 3,-5.74 0,-3.86 -3.14,-7 -7,-7z"/>
+    <!-- Metal Base (Grey) -->
+    <path
+            android:fillColor="#9E9E9E"
+            android:pathData="M9,17h6v2h-6z"/>
+    <!-- Reflection/Highlight (White opacity) -->
+    <path
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.5"
+            android:pathData="M13.5,4.5 C13.5,4.5 15,6 15,9 C15,9 15,5 13.5,4.5Z"/>
+</vector>

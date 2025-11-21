@@ -28,9 +28,9 @@ class CategoryRepository(
             .mapToList(Dispatchers.IO)
             .map { it.map { dbCat -> dbCat.toDomain() } }
 
-    suspend fun createCategory(name: String, type: CategoryType, isActive: Boolean): Category {
+    suspend fun createCategory(name: String, type: CategoryType, isActive: Boolean, color: Long, icon: String?): Category {
         return try {
-            val created = api.post<Category>("/categories", CategoryRequest(name, type, isActive))
+            val created = api.post<Category>("/categories", CategoryRequest(name, type, isActive, color, icon))
             val dbCat = created.toDb()
             categoryQueries.insertOrReplace(
                 id = dbCat.id,
@@ -38,7 +38,9 @@ class CategoryRepository(
                 type = dbCat.type,
                 isActive = dbCat.isActive,
                 updatedAt = dbCat.updatedAt,
-                is_deleted = dbCat.is_deleted
+                is_deleted = dbCat.is_deleted,
+                color = dbCat.color,
+                icon = dbCat.icon
             )
             created
         } catch (e: Exception) {
@@ -49,7 +51,9 @@ class CategoryRepository(
                 type = type,
                 isActive = isActive,
                 updatedAt = TimeWrapper.currentTimeMillis(),
-                isDeleted = false // Not deleted when created locally
+                isDeleted = false, // Not deleted when created locally
+                color = color,
+                icon = icon
             )
             val dbCat = localCategory.toDb()
             categoryQueries.insertOrReplace(
@@ -58,15 +62,17 @@ class CategoryRepository(
                 type = dbCat.type,
                 isActive = dbCat.isActive,
                 updatedAt = dbCat.updatedAt,
-                is_deleted = dbCat.is_deleted
+                is_deleted = dbCat.is_deleted,
+                color = dbCat.color,
+                icon = dbCat.icon
             )
             localCategory
         }
     }
 
-    suspend fun updateCategory(id: String, name: String, type: CategoryType, isActive: Boolean): Category {
+    suspend fun updateCategory(id: String, name: String, type: CategoryType, isActive: Boolean, color: Long, icon: String): Category {
         return try {
-            val updated = api.put<Category>("/categories/$id", CategoryRequest(name, type, isActive))
+            val updated = api.put<Category>("/categories/$id", CategoryRequest(name, type, isActive, color, icon))
             val dbCat = updated.toDb()
             categoryQueries.insertOrReplace(
                 id = dbCat.id,
@@ -74,7 +80,9 @@ class CategoryRepository(
                 type = dbCat.type,
                 isActive = dbCat.isActive,
                 updatedAt = dbCat.updatedAt,
-                is_deleted = dbCat.is_deleted
+                is_deleted = dbCat.is_deleted,
+                color = dbCat.color,
+                icon = dbCat.icon
             )
             updated
         } catch (e: Exception) {
@@ -96,7 +104,9 @@ class CategoryRepository(
                 type = dbCat.type,
                 isActive = dbCat.isActive,
                 updatedAt = dbCat.updatedAt,
-                is_deleted = dbCat.is_deleted
+                is_deleted = dbCat.is_deleted,
+                color = dbCat.color,
+                icon = dbCat.icon
             )
             updatedCategory
         }

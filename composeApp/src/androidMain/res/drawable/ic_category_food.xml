@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="24"
+        android:viewportHeight="24">
+
+    <!-- Building Body (Light Grey) -->
+    <path
+            android:fillColor="#BDBDBD"
+            android:pathData="M2,19h20v2h-20z"/>
+    <path
+            android:fillColor="#E0E0E0"
+            android:pathData="M4,8h16v11h-16z"/>
+
+    <!-- Door/Window (Blue) -->
+    <path
+            android:fillColor="#42A5F5"
+            android:pathData="M6,12h4v7h-4z M14,12h4v7h-4z"/>
+
+    <!-- Awning (Red) -->
+    <path
+            android:fillColor="#F44336"
+            android:pathData="M2,6l2,-4h16l2,4H2z"/>
+    <path
+            android:fillColor="#D32F2F"
+            android:pathData="M4,6h2v2h-2z M8,6h2v2h-2z M12,6h2v2h-2z M16,6h2v2h-2z M20,6h2v2h-2z"/>
+
+    <!-- Sign/Text hint (Dark Grey) -->
+    <path
+            android:fillColor="#616161"
+            android:pathData="M9,10h6v1.5h-6z"/>
+</vector>

@@ -105,7 +105,7 @@ class BudgetViewModel(
     fun addCategory(name: String, type: CategoryType) {
         viewModelScope.launch {
             try {
-                categoryRepository.createCategory(name, type, true)
+//                categoryRepository.createCategory(name, type, true)
                 syncService.syncAll() // Re-sync categories
             } catch (e: Exception) {
                 println("Failed to add category: ${e.message}")
@@ -121,4 +121,13 @@ class BudgetViewModel(
         }
     }
 
+    fun monthlyProgress(month: YearMonth): Flow<Pair<Double, Double>> {
+        return transactions.map { txs ->
+            val expenses = txs.filter { it.type == CategoryType.EXPENSE && YearMonth.parse(it.date) == month }
+                .sumOf { it.amount }
+            val budget = 2000.0 // TODO: configurable per user
+            expenses to budget
+        }
+    }
 }
+

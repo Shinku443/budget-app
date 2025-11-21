@@ -57,7 +57,9 @@ class CategorySyncManager(
                                 type = dbCat.type,
                                 isActive = dbCat.isActive,
                                 updatedAt = dbCat.updatedAt,
-                                is_deleted = dbCat.is_deleted
+                                is_deleted = dbCat.is_deleted,
+                                color = dbCat.color,
+                                icon = dbCat.icon
                             )
                         }
                     }
@@ -77,7 +79,9 @@ class CategorySyncManager(
                         type = dbCat.type,
                         isActive = dbCat.isActive,
                         updatedAt = dbCat.updatedAt,
-                        is_deleted = dbCat.is_deleted
+                        is_deleted = dbCat.is_deleted,
+                        color = dbCat.color,
+                        icon = dbCat.icon
                     )
                 }
             }

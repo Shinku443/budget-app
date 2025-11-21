@@ -11,7 +11,9 @@ fun DbCategory.toDomain(): DomainCategory =
         type = CategoryType.valueOf(type),
         isActive = isActive != 0L,
         updatedAt = updatedAt,
-        isDeleted = is_deleted == 1L
+        isDeleted = is_deleted == 1L,
+        color = color,
+        icon = icon
     )
 
 fun DomainCategory.toDb(): DbCategory =
@@ -21,5 +23,7 @@ fun DomainCategory.toDb(): DbCategory =
         type = type.name,
         isActive = if (isActive) 1L else 0L,
         updatedAt = updatedAt ?: 0L,
-        is_deleted = if (isDeleted) 1L else 0L
+        is_deleted = if (isDeleted) 1L else 0L,
+        color = color,
+        icon = icon
     )
