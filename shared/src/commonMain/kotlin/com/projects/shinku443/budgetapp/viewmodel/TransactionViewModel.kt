@@ -40,4 +40,10 @@ class TransactionViewModel(
             repo.deleteTransaction(id)
         }
     }
+
+    fun deleteTransactiosn(ids: List<String>) {
+        viewModelScope.launch {
+            repo.deleteTransactions(ids)
+        }
+    }
 }

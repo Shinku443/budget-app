@@ -66,4 +66,14 @@ class TransactionRepository(
             transactionQueries.markAsDeleted(id)
         }
     }
+
+    suspend fun deleteTransactions(ids: List<String>) {
+        try {
+            api.delete<Unit>("/transactions", bodyObj = ids)
+            transactionQueries.deleteByIds(ids)
+        } catch (e: Exception) {
+            Logger.e("TransactionRepository") { "Failed to delete transaction online, marking them for deletion: ${e.message}" }
+            transactionQueries.markAsDeletedByIds(ids)
+        }
+    }
 }

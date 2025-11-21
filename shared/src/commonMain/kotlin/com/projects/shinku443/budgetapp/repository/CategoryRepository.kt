@@ -111,4 +111,18 @@ class CategoryRepository(
             categoryQueries.markAsDeleted(id)
         }
     }
+
+    suspend fun deleteCategories(ids: List<String>) {
+        try {
+            api.delete<Unit>("/categories", bodyObj = ids)
+            categoryQueries.deleteByIds(ids)
+        } catch (e: Exception) {
+            Logger.e("CategoryRepository") { "Failed to delete categories online, marking for deletion: ${e.message}" }
+            categoryQueries.transaction {
+                ids.forEach {
+                    categoryQueries.markAsDeleted(it)
+                }
+            }
+        }
+    }
 }

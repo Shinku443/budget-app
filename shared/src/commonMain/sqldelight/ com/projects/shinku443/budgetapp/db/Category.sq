@@ -23,5 +23,12 @@ VALUES (?, ?, ?, ?, ?, ?);
 deleteById:
 DELETE FROM Category WHERE id = ?;
 
+deleteByIds:
+DELETE FROM Category WHERE id IN ?;
+
 markAsDeleted:
 UPDATE Category SET is_deleted = 1 WHERE id = ?;
+
+
+markAsDeletedByIds:
+UPDATE Category SET is_deleted = 1 WHERE id IN ?;
