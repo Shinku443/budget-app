@@ -27,11 +27,7 @@ class BudgetViewModel(
     private val _currentMonth = MutableStateFlow(TimeWrapper.currentYearMonth())
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
 
-    val transactions: StateFlow<List<Transaction>> = transactionRepository.observeTransactions()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    val categories: StateFlow<List<Category>> = categoryRepository.observeCategories()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    // Transactions and categories are owned by their respective viewmodels now.
 
     private val _monthlyBudgetGoal = MutableStateFlow(0.0f)
     val monthlyBudgetGoal: Float get() = _monthlyBudgetGoal.value
@@ -52,16 +48,14 @@ class BudgetViewModel(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, SyncStatus.Idle)
 
     // Derived flows
-    val expense: StateFlow<Double> = transactions.map { list ->
+    // Aggregates will be derived via repository queries when needed.
+    // For now, keep simple aggregate flows by observing repository directly.
+    val expense: StateFlow<Double> = transactionRepository.observeTransactions().map { list ->
         list.filter { it.type == CategoryType.EXPENSE }
             .sumOf { it.amount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
 
-    val monthlyExpenses: StateFlow<List<Transaction>> = transactions.map { list ->
-        list.filter { it.type == CategoryType.EXPENSE }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
-
-    val income: StateFlow<Double> = transactions.map { list ->
+    val income: StateFlow<Double> = transactionRepository.observeTransactions().map { list ->
         list.filter { it.type == CategoryType.INCOME }
             .sumOf { it.amount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
@@ -80,38 +74,7 @@ class BudgetViewModel(
         }
     }
 
-    fun addTransaction(tx: Transaction) {
-        viewModelScope.launch {
-            try {
-                transactionRepository.createTransaction(tx)
-                syncService.syncAll(_currentMonth.value) // Re-sync after adding
-            } catch (e: Exception) {
-                println("Failed to add transaction: ${e.message}")
-            }
-        }
-    }
-
-    fun deleteTransaction(tx: Transaction) {
-        viewModelScope.launch {
-            try {
-                transactionRepository.deleteTransaction(tx.id)
-                syncService.syncAll(_currentMonth.value) // Re-sync after deleting
-            } catch (e: Exception) {
-                println("Failed to delete transaction: ${e.message}")
-            }
-        }
-    }
-
-    fun addCategory(name: String, type: CategoryType) {
-        viewModelScope.launch {
-            try {
-                categoryRepository.createCategory(name, type, true)
-                syncService.syncAll() // Re-sync categories
-            } catch (e: Exception) {
-                println("Failed to add category: ${e.message}")
-            }
-        }
-    }
+    // CRUD for transactions/categories moved to TransactionViewModel/CategoryViewModel.
 
     fun setMonthlyBudgetGoal(goal: Float) {
         viewModelScope.launch {
@@ -121,4 +84,13 @@ class BudgetViewModel(
         }
     }
 
+    fun monthlyProgress(month: YearMonth): Flow<Pair<Double, Double>> {
+        return transactionRepository.observeTransactions().map { txs ->
+            val expenses = txs.filter { it.type == CategoryType.EXPENSE && YearMonth.parse(it.date) == month }
+                .sumOf { it.amount }
+            val budget = 2000.0 // TODO: configurable per user
+            expenses to budget
+        }
+    }
 }
+

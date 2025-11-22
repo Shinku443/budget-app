@@ -7,6 +7,7 @@ import com.projects.shinku443.budgetapp.model.Transaction
 import com.projects.shinku443.budgetapp.util.YearMonth
 import com.projects.shinku443.budgetapp.util.mapper.toDb
 import com.projects.shinku443.budgetapp.util.mapper.toDomain
+import io.ktor.util.date.getTimeMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -86,7 +87,7 @@ class TransactionSyncManager(
                 }
             }
 
-            _status.value = SyncStatus.Success(System.currentTimeMillis())
+            _status.value = SyncStatus.Success(getTimeMillis())
         } catch (e: Exception) {
             _status.value = SyncStatus.Error("Failed to sync transactions: ${e.message}")
             Logger.e("TransactionSyncManager") { "Failed to sync transactions: ${e.message}" }

@@ -31,15 +31,30 @@ class CategoryViewModel(
 
     fun createCategory(name: String, type: CategoryType) {
         viewModelScope.launch {
-            repo.createCategory(name, type, isActive = true) // hits API + DB
+//            repo.createCategory(name, type, isActive = true) // hits API + DB
             syncAll() // Re-sync after creation
         }
     }
 
-    fun updateCategory(id: String, name: String, type: CategoryType, isActive: Boolean) {
+    fun createCategory(name: String, type: CategoryType, color: Long, icon: String?) {
         viewModelScope.launch {
-            repo.updateCategory(id, name, type, isActive) // hits API + DB
+            repo.createCategory(name, type, isActive = true, color = color, icon = icon) // hits API + DB
+            syncAll() // Re-sync after creation
+        }
+    }
+
+
+    fun updateCategory(id: String, name: String, type: CategoryType, isActive: Boolean, color: Long, icon: String) {
+        viewModelScope.launch {
+            repo.updateCategory(id, name, type, isActive, color, icon) // hits API + DB
             syncAll() // Re-sync after update
+        }
+    }
+
+    fun renameCategory(id: String, newName: String) {
+        viewModelScope.launch {
+            repo.renameCategory(id, newName)
+            syncAll()
         }
     }
 

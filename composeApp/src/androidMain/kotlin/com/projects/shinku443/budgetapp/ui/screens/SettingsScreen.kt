@@ -1,64 +1,215 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.screen.Screen
-import com.projects.shinku443.budgetapp.settings.Settings
+import co.touchlab.kermit.Logger
+import com.projects.shinku443.budgetapp.notifications.cancelDailyReminder
+import com.projects.shinku443.budgetapp.notifications.scheduleDailyReminder
+import com.projects.shinku443.budgetapp.notifications.scheduleTestReminder
+import com.projects.shinku443.budgetapp.settings.Settings.Theme
 import com.projects.shinku443.budgetapp.viewmodel.SettingsViewModel
-import org.koin.androidx.compose.getViewModel
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
+
+//Can use later for generic list render
+//sealed class SettingItem(val title: String) {
+//    object Theme : SettingItem("Theme")
+//    object Currency : SettingItem("Currency")
+//    object Notifications : SettingItem("Notifications")
+//    object Sync : SettingItem("Sync")
+//    object Login : SettingItem("Login")
+//    object Logout : SettingItem("Logout")
+//}
 
 class SettingsScreen : Screen {
-
     @Composable
     override fun Content() {
-        // If you’re using Koin for DI:
-        val viewModel: SettingsViewModel = getViewModel()
+        SettingsContent()
+    }
+}
 
-        val theme by viewModel.theme.collectAsState()
+@Composable
+fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
+    val theme by viewModel.theme.collectAsState()
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
+    val language by viewModel.language.collectAsState()
+    val context = LocalContext.current
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                Logger.d("Notification permission granted")
+                scheduleTestReminder(context) // or scheduleDailyReminder(context)
+            } else {
+                Logger.d("Notification permission denied")
+            }
+        }
+    )
+
+    val showPermissionButton = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+
+//    val shouldShowRationale = remember {
+//        activity?.let {
+//            ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.POST_NOTIFICATIONS)
+//        } ?: false
+//    }
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+
+
+        // Theme toggle
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Settings", style = MaterialTheme.typography.titleLarge)
+            Text("Dark Theme")
+            Switch(
+                checked = theme == Theme.DARK,
+                onCheckedChange = { enabled ->
+                    viewModel.setTheme(if (enabled) Theme.DARK else Theme.LIGHT)
+                }
+            )
+        }
 
-            Spacer(Modifier.height(16.dp))
+        // Language selector (simple dropdown)
+        LanguageSelector(
+            current = language,
+            onSelect = { selected -> viewModel.setLanguage(selected) }
+        )
 
-            // Example toggle for dark/light theme
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Dark Theme")
-                Switch(
-                    checked = theme == Settings.Theme.DARK,
-                    onCheckedChange = { checked ->
-                        viewModel.setTheme(if (checked) Settings.Theme.DARK else Settings.Theme.LIGHT)
+        // Notifications toggle
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Notifications")
+//            Switch(
+//                checked = notificationsEnabled,
+//                onCheckedChange = { viewModel.setNotificationsEnabled(it) }
+//            )
+            Switch(
+                checked = notificationsEnabled,
+                onCheckedChange = { enabled ->
+                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        viewModel.setNotificationsEnabled(enabled)
+                        if (enabled) scheduleDailyReminder(context) else cancelDailyReminder(context)
+                    }
+                }
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Auth stubs
+
+        Button(
+            onClick = {  viewModel.setLoggedIn(false) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Log out")
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
+@Composable
+fun CurrencySelector(
+    current: String,
+    onSelect: (String) -> Unit
+) {
+    val options = listOf("USD", "EUR", "JPY")
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(current) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Currency") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        selected = option
+                        expanded = false
+                        onSelect(option)
                     }
                 )
             }
+        }
+    }
+}
 
-            Spacer(Modifier.height(16.dp))
 
-            // Example toggle for notifications
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Enable Notifications")
-                Switch(
-                    checked = notificationsEnabled,
-                    onCheckedChange = { checked ->
-                        viewModel.setNotificationsEnabled(checked)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LanguageSelector(current: String, onSelect: (String) -> Unit) {
+    val options = listOf("en", "es", "fr", "de", "kr", "cn")
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(current) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Language") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        selected = option
+                        expanded = false
+                        onSelect(option)
                     }
                 )
             }

@@ -27,6 +27,12 @@ class ApiClient(
     suspend inline fun <reified T> delete(path: String): T =
         client.delete("$baseUrl$path").body()
 
+    suspend inline fun <reified T> delete(path: String, bodyObj: Any): T =
+        client.delete("$baseUrl$path") {
+            contentType(ContentType.Application.Json)
+            setBody(bodyObj)
+        }.body()
+
     suspend inline fun <reified T> patch(path: String, bodyObj: Any): T =
         client.patch("$baseUrl$path") {
             contentType(ContentType.Application.Json)

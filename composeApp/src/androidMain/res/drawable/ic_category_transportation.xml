@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="24.0"
+        android:viewportHeight="24.0">
+    <!-- Tires -->
+    <path
+            android:fillColor="#212121"
+            android:pathData="M6.5,18c-1.38,0 -2.5,-1.12 -2.5,-2.5h5C9,16.88 7.88,18 6.5,18z M17.5,18c-1.38,0 -2.5,-1.12 -2.5,-2.5h5C20,16.88 18.88,18 17.5,18z"/>
+    <!-- Car Body Blue -->
+    <path
+            android:fillColor="#1976D2"
+            android:pathData="M20,15.5H4V13h16V15.5z M19,11L17,6H7L5,11H3v3h18v-3H19z"/>
+    <!-- Windows Light Blue -->
+    <path
+            android:fillColor="#90CAF9"
+            android:pathData="M16,11H8L9.5,7h5L16,11z"/>
+    <!-- Headlight Yellow -->
+    <path
+            android:fillColor="#FFEB3B"
+            android:pathData="M21,12h1v1h-1z"/>
+    <!-- Taillight Red -->
+    <path
+            android:fillColor="#F44336"
+            android:pathData="M2,12h1v1H2z"/>
+</vector>

@@ -10,6 +10,11 @@ import kotlinx.coroutines.flow.map
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
+
+    val loggedIn: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[SettingsKeys.LOGGED_IN] ?: false
+    }
+
     val theme: Flow<Theme> = dataStore.data.map { prefs ->
         val value = prefs[SettingsKeys.THEME] ?: Theme.LIGHT.name
         Theme.valueOf(value)
@@ -33,5 +38,10 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun setLanguage(language: String) {
         dataStore.edit { prefs -> prefs[SettingsKeys.LANGUAGE] = language }
+    }
+
+
+    suspend fun setLoggedIn(value: Boolean) {
+        dataStore.edit { prefs -> prefs[SettingsKeys.LOGGED_IN] = value }
     }
 }

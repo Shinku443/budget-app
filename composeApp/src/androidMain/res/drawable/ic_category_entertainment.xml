@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="24.0"
+        android:viewportHeight="24.0">
+    <!-- Popcorn Kernels (Cream/Yellow) -->
+    <path
+            android:fillColor="#FFF9C4"
+            android:pathData="M12,2C10,2 9,4 9,4C7,3 5,4 5,6C5,8 7,8 7,8L17,8C17,8 19,8 19,6C19,4 17,3 15,4C15,4 14,2 12,2Z"/>
+    <!-- Bucket Back (Red) -->
+    <path
+            android:fillColor="#F44336"
+            android:pathData="M5,8L7,22H17L19,8H5Z"/>
+    <!-- Bucket Stripes (White/Lighter Red) -->
+    <path
+            android:fillColor="#EF9A9A"
+            android:pathData="M8,8 L9,22 H11 L11,8 Z M13,8 L13,22 H15 L16,8 Z"/>
+</vector>

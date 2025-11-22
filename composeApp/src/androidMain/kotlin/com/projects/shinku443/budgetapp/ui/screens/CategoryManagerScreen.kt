@@ -1,112 +1,214 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
+import com.projects.shinku443.budgetapp.model.Category
 import com.projects.shinku443.budgetapp.model.CategoryType
+import com.projects.shinku443.budgetapp.ui.components.ColorPicker
+import com.projects.shinku443.budgetapp.ui.components.IconPicker
+import com.projects.shinku443.budgetapp.ui.utils.discoverCategoryIconsByPrefix
 import com.projects.shinku443.budgetapp.viewmodel.CategoryViewModel
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 class CategoryManagerScreen : Screen {
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
-        // If you’re using Koin:
         val viewModel: CategoryViewModel = koinViewModel()
-
         val categories by viewModel.categories.collectAsState()
-        val snackbarHostState = remember { SnackbarHostState() }
-        val coroutineScope = rememberCoroutineScope()
 
         var name by remember { mutableStateOf("") }
         var categoryType by remember { mutableStateOf(CategoryType.EXPENSE) }
-        val selectedIds = remember { mutableStateListOf<String>() }
+        var selectedIconName by remember { mutableStateOf<String?>(null) }
+        var selectedColorLong by remember { mutableStateOf(0L) }
+        var editMode by remember { mutableStateOf(false) }
 
-        Column(
-            Modifier
-                .padding(16.dp)
-                .fillMaxSize()
-        ) {
-            Text("Create Category", style = MaterialTheme.typography.titleLarge)
+        val tintColor = Color(selectedColorLong)
 
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Category Name") },
-                modifier = Modifier.fillMaxWidth()
-            )
+        val icons = remember { discoverCategoryIconsByPrefix("ic_category_") }
 
-            Row {
-                FilterChip(
-                    selected = categoryType == CategoryType.EXPENSE,
-                    onClick = { categoryType = CategoryType.EXPENSE },
-                    label = { Text("Expense") }
-                )
-                Spacer(Modifier.width(8.dp))
-                FilterChip(
-                    selected = categoryType == CategoryType.INCOME,
-                    onClick = { categoryType = CategoryType.INCOME },
-                    label = { Text("Income") }
-                )
-            }
-
-            Button(onClick = {
-                if (name.isNotBlank()) {
-                    viewModel.createCategory(name, categoryType)
-                    name = ""
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Category added")
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Manage Categories") },
+                    actions = {
+                        IconButton(onClick = { editMode = !editMode }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Toggle edit mode")
+                        }
                     }
-                }
-            }) {
-                Text("Add Category")
-            }
-
-            LazyColumn {
-                items(categories) { c ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                )
+            },
+            snackbarHost = { SnackbarHost(remember { SnackbarHostState() }) }
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                // Category chips at the top
+                item {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row {
-                            Checkbox(
-                                checked = selectedIds.contains(c.id),
-                                onCheckedChange = { checked ->
-                                    if (checked) selectedIds.add(c.id) else selectedIds.remove(c.id)
-                                }
-                            )
-                            Text("${c.name} (${c.type})", modifier = Modifier.padding(start = 8.dp))
+                        categories.forEach { category ->
+                            if (editMode) {
+                                EditableCategoryChip(
+                                    category = category,
+                                    onRename = { newName ->
+                                        viewModel.renameCategory(category.id, newName)
+                                    },
+                                    onDelete = {
+                                        viewModel.deleteCategory(category.id)
+                                    }
+                                )
+                            } else {
+                                CategoryChip(category = category, selected = false, onClick = {})
+                            }
                         }
                     }
                 }
-            }
 
-            if (selectedIds.isNotEmpty()) {
-                Button(
-                    onClick = {
-                        viewModel.deleteCategories(selectedIds.toList())
-                        selectedIds.clear()
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Deleted categories")
+                // Create Category Form
+                item {
+                    ElevatedCard(
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = name,
+                                onValueChange = { name = it },
+                                label = { Text("Category name") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilterChip(
+                                    selected = categoryType == CategoryType.EXPENSE,
+                                    onClick = { categoryType = CategoryType.EXPENSE },
+                                    label = { Text("Expense") }
+                                )
+                                FilterChip(
+                                    selected = categoryType == CategoryType.INCOME,
+                                    onClick = { categoryType = CategoryType.INCOME },
+                                    label = { Text("Income") }
+                                )
+                            }
+
+                            IconPicker(
+                                icons = icons,
+                                selectedIconName = selectedIconName,
+                                onSelect = { selectedIconName = it },
+                                tintColor = tintColor
+                            )
+
+                            // Color picker with transparent + custom option
+                            ColorPicker(
+                                selectedColor = selectedColorLong,
+                                onSelectColor = { selectedColorLong = it },
+                            )
+
+                            Button(
+                                onClick = {
+                                    if (name.isNotBlank() && selectedIconName != null) {
+                                        viewModel.createCategory(
+                                            name = name,
+                                            type = categoryType,
+                                            color = selectedColorLong,
+                                            icon = selectedIconName
+                                        )
+                                        name = ""
+                                        selectedIconName = null
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = name.isNotBlank() && selectedIconName != null
+                            ) {
+                                Text("Add category")
+                            }
                         }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                    Spacer(Modifier.width(4.dp))
-                    Text("Delete Selected")
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+fun CategoryChip(category: Category, selected: Boolean, onClick: () -> Unit) {
+    val context = LocalContext.current
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(category.name) },
+        leadingIcon = {
+            category.icon?.let { iconName ->
+                val resId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+                if (resId != 0) {
+                    Icon(
+                        painterResource(resId),
+                        contentDescription = category.name,
+                        tint = Color(category.color)
+                    )
+                }
+            }
+        },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = Color(category.color).copy(alpha = 0.2f)
+        )
+    )
+}
+
+@Composable
+fun EditableCategoryChip(
+    category: Category,
+    onRename: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var text by remember { mutableStateOf(category.name) }
+    FilterChip(
+        selected = false,
+        onClick = {},
+        label = {
+            TextField(
+                value = text,
+                onValueChange = {
+                    text = it
+                    onRename(it)
+                },
+                singleLine = true,
+                modifier = Modifier.width(100.dp)
+            )
+        },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Delete",
+                modifier = Modifier.clickable { onDelete() }
+            )
+        }
+    )
 }

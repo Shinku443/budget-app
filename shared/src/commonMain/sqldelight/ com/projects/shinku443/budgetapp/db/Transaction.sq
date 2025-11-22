@@ -23,5 +23,11 @@ INSERT OR REPLACE INTO AppTransaction(
 deleteById:
 DELETE FROM AppTransaction WHERE id = ?;
 
+deleteByIds:
+DELETE FROM AppTransaction WHERE id IN ?;
+
 markAsDeleted:
 UPDATE AppTransaction SET is_deleted = 1 WHERE id = ?;
+
+markAsDeletedByIds:
+UPDATE AppTransaction SET is_deleted = 1 WHERE id IN ?;

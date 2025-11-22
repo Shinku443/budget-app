@@ -4,7 +4,9 @@ CREATE TABLE Category (
   type TEXT NOT NULL,
   isActive INTEGER NOT NULL,
   updatedAt INTEGER NOT NULL,
-  is_deleted INTEGER NOT NULL DEFAULT 0
+  is_deleted INTEGER NOT NULL DEFAULT 0,
+  color INTEGER NOT NULL DEFAULT 35064147,
+  icon TEXT
 );
 
 selectAll:
@@ -13,15 +15,24 @@ SELECT * FROM Category WHERE is_deleted = 0;
 selectAllIncludingDeleted:
 SELECT * FROM Category;
 
- selectById:
- SELECT * FROM Category WHERE id = ?;
+selectById:
+SELECT * FROM Category WHERE id = ?;
 
 insertOrReplace:
-INSERT OR REPLACE INTO Category(id, name, type, isActive, updatedAt, is_deleted)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO Category(id, name, type, isActive, updatedAt, is_deleted, color, icon)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 deleteById:
 DELETE FROM Category WHERE id = ?;
 
+deleteByIds:
+DELETE FROM Category WHERE id IN ?;
+
 markAsDeleted:
 UPDATE Category SET is_deleted = 1 WHERE id = ?;
+
+markAsDeletedByIds:
+UPDATE Category SET is_deleted = 1 WHERE id IN ?;
+
+renameCategory:
+UPDATE Category SET name = ? WHERE id = ?;

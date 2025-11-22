@@ -7,6 +7,7 @@ import com.projects.shinku443.budgetapp.model.Category
 import com.projects.shinku443.budgetapp.util.YearMonth
 import com.projects.shinku443.budgetapp.util.mapper.toDb
 import com.projects.shinku443.budgetapp.util.mapper.toDomain
+import io.ktor.util.date.getTimeMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -56,7 +57,9 @@ class CategorySyncManager(
                                 type = dbCat.type,
                                 isActive = dbCat.isActive,
                                 updatedAt = dbCat.updatedAt,
-                                is_deleted = dbCat.is_deleted
+                                is_deleted = dbCat.is_deleted,
+                                color = dbCat.color,
+                                icon = dbCat.icon
                             )
                         }
                     }
@@ -76,12 +79,14 @@ class CategorySyncManager(
                         type = dbCat.type,
                         isActive = dbCat.isActive,
                         updatedAt = dbCat.updatedAt,
-                        is_deleted = dbCat.is_deleted
+                        is_deleted = dbCat.is_deleted,
+                        color = dbCat.color,
+                        icon = dbCat.icon
                     )
                 }
             }
 
-            _status.value = SyncStatus.Success(System.currentTimeMillis())
+            _status.value = SyncStatus.Success(getTimeMillis())
         } catch (e: Exception) {
             _status.value = SyncStatus.Error("Failed to sync categories: ${e.message}")
             Logger.e("CategorySyncManager") { "Failed to sync categories: ${e.message}" }

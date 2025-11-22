@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="24dp"
+        android:height="24dp"
+        android:viewportWidth="24.0"
+        android:viewportHeight="24.0">
+    <!-- Baguette (Back) -->
+    <path
+            android:fillColor="#FFB74D"
+            android:pathData="M8,8L10,2L14,8Z"/>
+    <!-- Greenery/Vegetable -->
+    <path
+            android:fillColor="#4CAF50"
+            android:pathData="M14,8C14,8 17,2 19,4C21,6 17,8 17,8Z"/>
+    <!-- Apple Red -->
+    <path
+            android:fillColor="#F44336"
+            android:pathData="M12,5.5C12,5.5 11,4 10,4C9,4 8.5,5 8.5,5C8.5,5 8,4 7,4C5,4 5,7 5,7C5,9 7,10 8.5,10C10,10 12,9 12,7Z"/>
+    <!-- Apple Leaf -->
+    <path
+            android:fillColor="#8BC34A"
+            android:pathData="M10,4C10,4 10.5,2 11.5,2C11.5,2 11,4 10,4Z"/>
+    <!-- Paper Bag Body -->
+    <path
+            android:fillColor="#A1887F"
+            android:pathData="M4,8L6,20C6.16,20.9 7.2,21.5 8,21.5H16C16.8,21.5 17.84,20.9 18,20L20,8H4Z"/>
+</vector>

@@ -86,7 +86,9 @@ class BudgetRepository(
                     type = dbCat.type,
                     isActive = dbCat.isActive,
                     updatedAt = dbCat.updatedAt,
-                    is_deleted = dbCat.is_deleted
+                    is_deleted = dbCat.is_deleted,
+                    color = dbCat.color,
+                    icon = dbCat.icon
                 )
             }
         } catch (e: Exception) {
@@ -94,9 +96,9 @@ class BudgetRepository(
         }
     }
 
-    override suspend fun refreshBudgetGoal(month: YearMonth) {
+    override suspend fun refreshBudgetGoal(yearMonth: YearMonth) {
         try {
-            val remoteGoal = api.get<BudgetGoal>("/budgetGoal?year=${month.year}&month=${month.month}")
+            val remoteGoal = api.get<BudgetGoal>("/budgetGoal?year=${yearMonth.year}&month=${yearMonth.month}")
             val dbGoal = remoteGoal.toDb()
             budgetGoalQueries.insertOrReplace(
                 id = dbGoal.id,
@@ -167,7 +169,9 @@ class BudgetRepository(
             type = dbCat.type,
             isActive = dbCat.isActive,
             updatedAt = dbCat.updatedAt,
-            is_deleted = dbCat.is_deleted
+            is_deleted = dbCat.is_deleted,
+            color = dbCat.color,
+            icon = dbCat.icon
         )
         return created
     }

@@ -23,7 +23,6 @@ class BudgetGoalsScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: BudgetViewModel = koinViewModel()
-
         // Observe current goal and expenses
         val monthlyGoal by remember { mutableFloatStateOf(viewModel.monthlyBudgetGoal) }
         val expense by viewModel.expense.collectAsState()
@@ -55,6 +54,8 @@ class BudgetGoalsScreen : Screen {
 
                 Spacer(Modifier.height(16.dp))
 
+                //MonthlyBudgetProgress
+
                 // Progress indicator
                 val progress = if (monthlyGoal > 0) (expense / monthlyGoal).coerceIn(0.0, 1.0) else 0.0
                 LinearProgressIndicator(
@@ -73,8 +74,7 @@ class BudgetGoalsScreen : Screen {
                 onClick = {
                     val parsed = newGoalText.toFloatOrNull()
                     if (parsed != null && parsed > 0f) {
-                        // Update goal in ViewModel
-                        // viewModel.setMonthlyBudgetGoal(parsed)
+                        viewModel.setMonthlyBudgetGoal(parsed)
                         navigator.pop()
                     }
                 },
@@ -85,5 +85,17 @@ class BudgetGoalsScreen : Screen {
                 Icon(Icons.Default.Check, contentDescription = "Save")
             }
         }
+    }
+}
+
+@Composable
+fun MonthlyBudgetProgress(expenses: Double, budget: Double) {
+    val progress = (expenses / budget).coerceIn(0.0, 1.0)
+    Column {
+        Text("Monthly Budget: $expenses / $budget")
+        LinearProgressIndicator(
+            progress = progress.toFloat(),
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
