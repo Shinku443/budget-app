@@ -6,8 +6,11 @@ import co.touchlab.kermit.Logger
 import com.projects.shinku443.budgetapp.api.ApiClient
 import com.projects.shinku443.budgetapp.db.BudgetDatabase
 import com.projects.shinku443.budgetapp.model.Transaction
+import com.projects.shinku443.budgetapp.util.YearMonth
 import com.projects.shinku443.budgetapp.util.mapper.toDb
 import com.projects.shinku443.budgetapp.util.mapper.toDomain
+import com.projects.shinku443.budgetapp.util.toSqlStartDate
+import com.projects.shinku443.budgetapp.util.toSqlStartOfNextMonthDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -76,4 +79,46 @@ class TransactionRepository(
             transactionQueries.markAsDeletedByIds(ids)
         }
     }
+
+    suspend fun updateTransaction(tx: Transaction): Transaction {
+        return try {
+            val updated = api.put<Transaction>("/transactions/${tx.id}", tx)
+            val dbTx = updated.toDb()
+            transactionQueries.insertOrReplace(
+                id = dbTx.id,
+                amount = dbTx.amount,
+                type = dbTx.type,
+                categoryId = dbTx.categoryId,
+                date = dbTx.date,
+                description = dbTx.description,
+                createdAt = dbTx.createdAt,
+                is_deleted = 0
+            )
+            updated
+        } catch (e: Exception) {
+            Logger.e("TransactionRepository") { "Failed to update transaction online, updating locally: ${e.message}" }
+            val dbTx = tx.toDb()
+            transactionQueries.insertOrReplace(
+                id = dbTx.id,
+                amount = dbTx.amount,
+                type = dbTx.type,
+                categoryId = dbTx.categoryId,
+                date = dbTx.date,
+                description = dbTx.description,
+                createdAt = dbTx.createdAt,
+                is_deleted = 0
+            )
+            tx
+        }
+    }
+
+    fun observeTransactionsForMonth(yearMonth: YearMonth): Flow<List<Transaction>> {
+        val start = yearMonth.toSqlStartDate()
+        val next = yearMonth.toSqlStartOfNextMonthDate()
+        return db.transactionQueries.selectBetween(start, next)
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .map { list -> list.map { it.toDomain() } }
+    }
+
 }

@@ -1,22 +1,29 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
-import android.annotation.SuppressLint
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.projects.shinku443.budgetapp.sync.SyncStatus
 import com.projects.shinku443.budgetapp.ui.components.CategoryPieChart
+import com.projects.shinku443.budgetapp.ui.components.MonthlyComparison
+import com.projects.shinku443.budgetapp.ui.components.MonthlyTrendChart
 import com.projects.shinku443.budgetapp.ui.components.TransactionList
 import com.projects.shinku443.budgetapp.util.YearMonth
 import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
@@ -29,17 +36,41 @@ import java.time.Month
 import java.time.format.TextStyle
 import java.util.*
 
-
 class DashboardScreen : Screen {
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter") //TODO - look into this
-    @Composable
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
+    @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: BudgetViewModel = koinViewModel()
         val transactionViewModel: TransactionViewModel = koinViewModel()
         val transactions by transactionViewModel.transactionsFiltered.collectAsState()
+        val allTransactions by transactionViewModel.transactions.collectAsState()
         val currentMonth by viewModel.currentMonth.collectAsState()
+        val expense by viewModel.expense.collectAsState()
+
+        // Local UI selection for month/year (stays in sync with viewModel.currentMonth)
+        var selectedMonthLocal by remember { mutableStateOf(currentMonth) }
+        LaunchedEffect(currentMonth) {
+            selectedMonthLocal = currentMonth
+        }
+
+        // Filter transactions by the locally selected month for immediate UI updates
+        val selectedMonthStr = selectedMonthLocal.toString()
+        val currentMonthTransactions = remember(allTransactions, selectedMonthStr) {
+            allTransactions.filter { it.date.startsWith(selectedMonthStr) }
+        }
+
+        val previousMonth = remember(selectedMonthLocal) {
+            if (selectedMonthLocal.month == 1) {
+                YearMonth(selectedMonthLocal.year - 1, 12)
+            } else {
+                YearMonth(selectedMonthLocal.year, selectedMonthLocal.month - 1)
+            }
+        }
+        val previousMonthStr = previousMonth.toString()
+        val previousMonthTransactions = remember(allTransactions, previousMonthStr) {
+            allTransactions.filter { it.date.startsWith(previousMonthStr) }
+        }
 
         var isRefreshing by remember { mutableStateOf(false) }
         val pullToRefreshState = rememberPullToRefreshState()
@@ -49,6 +80,7 @@ class DashboardScreen : Screen {
         val syncStatus by viewModel.syncStatus.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
         var showAddTransaction by remember { mutableStateOf(false) }
+        var transactionToEdit by remember { mutableStateOf<com.projects.shinku443.budgetapp.model.Transaction?>(null) }
 
         // Track items that are pending deletion, to be removed from the UI temporarily
         val pendingDeleteIds = remember { mutableStateOf(setOf<String>()) }
@@ -100,7 +132,7 @@ class DashboardScreen : Screen {
         }
 
         var selectedTab by remember { mutableStateOf(0) }
-        val tabs = listOf("Transactions", "Breakdown", "Trends", "Budgets")
+        val tabs = listOf("Transactions", "Breakdown", "Trends", "Budgets", "Comparison")
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
@@ -108,16 +140,16 @@ class DashboardScreen : Screen {
                     ExtendedFloatingActionButton(
                         onClick = { showAddTransaction = true },
                         containerColor = MaterialTheme.colorScheme.primary,
-
-//                        onClick = { navigator.push(AddTransactionScreen()) },
                         icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
-                        text = { Text("Add Transaction") }
+                        text = { Text("Add") },
+                        elevation = FloatingActionButtonDefaults.elevation(8.dp)
                     )
                 }
             }
-        ) {
+        ) { innerPadding ->
             Column(
                 Modifier
+                    .padding(innerPadding)
                     .fillMaxSize()
                     .pullToRefresh(
                         state = pullToRefreshState,
@@ -125,36 +157,107 @@ class DashboardScreen : Screen {
                         onRefresh = onRefresh
                     ),
             ) {
-                // Month Selector Header
-                Row(
+                // Modern Month Selector Header (uses local selection)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    tonalElevation = 6.dp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .clickable { showPicker = true }
                 ) {
-                    TextButton(onClick = { showPicker = true }) {
-                        Text(
-                            text = "${
-                                Month.of(currentMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault())
-                            } ${currentMonth.year}",
-                            style = MaterialTheme.typography.titleLarge
-                        )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        IconButton(
+                            onClick = {
+                                // go to previous month (update local state and ask VM to sync)
+                                val cm = selectedMonthLocal
+                                val prev =
+                                    if (cm.month == 1) YearMonth(cm.year - 1, 12) else YearMonth(cm.year, cm.month - 1)
+                                selectedMonthLocal = prev
+                                viewModel.syncDataForMonth(prev)
+//                                transactionViewModel.transactions
+//                                transactionViewModel.setFilterMonth(prev)
+
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(Icons.Default.ChevronLeft, contentDescription = "Previous month")
+                        }
+
+                        Spacer(Modifier.width(6.dp))
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = Month.of(selectedMonthLocal.month).getDisplayName(TextStyle.FULL, Locale.getDefault())
+                                    .uppercase(Locale.getDefault()),
+                                style = MaterialTheme.typography.headlineSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = selectedMonthLocal.year.toString(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Spacer(Modifier.width(6.dp))
+
+                        IconButton(
+                            onClick = {
+                                // go to next month (update local state and ask VM to sync)
+                                val cm = selectedMonthLocal
+                                val next =
+                                    if (cm.month == 12) YearMonth(cm.year + 1, 1) else YearMonth(cm.year, cm.month + 1)
+                                selectedMonthLocal = next
+                                viewModel.syncDataForMonth(next)
+//                                transactionViewModel.setFilterMonth(next)
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(Icons.Default.ChevronRight, contentDescription = "Next month")
+                        }
                     }
                 }
 
-                // Tabs
-                TabRow(selectedTabIndex = selectedTab) {
+                // Tabs with modern indicator
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            Modifier
+                                .tabIndicatorOffset(tabPositions[selectedTab])
+                                .padding(horizontal = 24.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            height = 3.dp
+                        )
+                    }
+                ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
-                            text = { Text(title) }
+                            text = {
+                                Text(
+                                    title,
+                                    style = if (selectedTab == index) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         )
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
                 when (selectedTab) {
                     0 -> {
@@ -167,6 +270,7 @@ class DashboardScreen : Screen {
                                 transactionViewModel.setQuery(it)
                             },
                             label = { Text("Search transactions") },
+                            singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
@@ -177,13 +281,23 @@ class DashboardScreen : Screen {
                         val displayedTransactions = transactions.filter { it.id !in pendingDeleteIds.value }
 
                         if (displayedTransactions.isEmpty()) {
-                            Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
+                            Text(
+                                "No transactions yet",
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(top = 24.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         } else {
                             TransactionList(
                                 transactions = displayedTransactions,
                                 onDelete = { tx ->
                                     // Direct delete from icon
                                     transactionViewModel.deleteTransaction(tx.id)
+                                },
+                                onEdit = { tx ->
+                                    transactionToEdit = tx
+                                    showAddTransaction = true
                                 },
                                 onSwipeDelete = { tx ->
                                     coroutineScope.launch {
@@ -219,34 +333,117 @@ class DashboardScreen : Screen {
                         Text(
                             modifier = Modifier.fillMaxWidth(),
                             text = "Total Expenses",
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.titleMedium
                         )
                         if (pieChartData.isNotEmpty()) {
                             CategoryPieChart(
                                 data = pieChartData,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(top = 12.dp)
                             )
                         }
                     }
 
                     2 -> {
-                        // Placeholder for trends chart
-                        Text("Trends chart goes here", modifier = Modifier.align(Alignment.CenterHorizontally))
+                        // Trends chart - show all transactions for selected month
+                        MonthlyTrendChart(
+                            transactions = currentMonthTransactions,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        )
                     }
 
                     3 -> {
-                        // Placeholder for budgets progress
-                        Text("Budget progress bars go here", modifier = Modifier.align(Alignment.CenterHorizontally))
+                        // Budget progress
+                        val budgetGoal by viewModel.monthlyBudgetGoal.collectAsState()
+                        val currentExpenses = expense
+                        val progress = if (budgetGoal > 0) {
+                            (currentExpenses / budgetGoal.toDouble()).coerceIn(0.0, 1.0)
+                        } else {
+                            0.0
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                "Monthly Budget Progress",
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            )
+
+                            if (budgetGoal > 0) {
+                                LinearProgressIndicator(
+                                    progress = progress.toFloat(),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Spent: $${String.format("%.2f", currentExpenses)}",
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    Text(
+                                        "Goal: $${String.format("%.2f", budgetGoal)}",
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+
+                                val remaining = budgetGoal.toDouble() - currentExpenses
+                                Text(
+                                    if (remaining >= 0) {
+                                        "Remaining: $${String.format("%.2f", remaining)}"
+                                    } else {
+                                        "Over budget by: $${String.format("%.2f", -remaining)}"
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (remaining >= 0) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.error
+                                    }
+                                )
+                            } else {
+                                Text(
+                                    "No budget goal set. Set a goal in the Goals section.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+                            }
+                        }
+                    }
+
+                    4 -> {
+                        // Monthly comparison
+                        MonthlyComparison(
+                            currentMonthTransactions = currentMonthTransactions,
+                            previousMonthTransactions = previousMonthTransactions,
+                            currentMonth = selectedMonthLocal,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        )
                     }
                 }
             }
 
             if (showPicker) {
                 MonthYearPickerDialog(
-                    initialMonth = currentMonth,
+                    initialMonth = selectedMonthLocal,
                     onDismiss = { showPicker = false },
                     onConfirm = { selectedMonth ->
+                        selectedMonthLocal = selectedMonth
                         viewModel.syncDataForMonth(selectedMonth)
+//                        transactionViewModel.setFilterMonth(selectedMonth)
                         showPicker = false
                     }
                 )
@@ -255,9 +452,18 @@ class DashboardScreen : Screen {
 
         if (showAddTransaction) {
             ModalBottomSheet(
-                onDismissRequest = { showAddTransaction = false }
+                onDismissRequest = {
+                    showAddTransaction = false
+                    transactionToEdit = null
+                }
             ) {
-                AddTransactionScreen(onDismiss = { showAddTransaction = false }).Content()
+                AddTransactionScreen(
+                    onDismiss = {
+                        showAddTransaction = false
+                        transactionToEdit = null
+                    },
+                    transactionToEdit = transactionToEdit
+                ).Content()
             }
         }
     }

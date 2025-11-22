@@ -6,9 +6,12 @@ import com.projects.shinku443.budgetapp.model.Transaction
 import com.projects.shinku443.budgetapp.model.CategoryType
 import com.projects.shinku443.budgetapp.repository.TransactionRepository
 import com.projects.shinku443.budgetapp.sync.SyncService
+import com.projects.shinku443.budgetapp.util.TimeWrapper
+import com.projects.shinku443.budgetapp.util.YearMonth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -22,6 +25,9 @@ class TransactionViewModel(
     // Observe transactions directly from DB
     val transactions: StateFlow<List<Transaction>> = repo.observeTransactions()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _filterMonth = MutableStateFlow(TimeWrapper.currentYearMonth())
+    val filterMonth: StateFlow<YearMonth> = _filterMonth.asStateFlow()
 
     // Keep track of transactions staged for deletion
     private val pendingDeleteIds = MutableStateFlow(setOf<String>())
@@ -58,6 +64,12 @@ class TransactionViewModel(
     fun createTransaction(tx: Transaction) {
         viewModelScope.launch {
             repo.createTransaction(tx)
+        }
+    }
+
+    fun updateTransaction(tx: Transaction) {
+        viewModelScope.launch {
+            repo.updateTransaction(tx)
         }
     }
 

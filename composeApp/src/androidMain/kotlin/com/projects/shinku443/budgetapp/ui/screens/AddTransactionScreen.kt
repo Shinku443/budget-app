@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -27,7 +28,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class AddTransactionScreen(private val onDismiss: () -> Unit = {}) : Screen {
+class AddTransactionScreen(
+    private val onDismiss: () -> Unit = {},
+    private val transactionToEdit: Transaction? = null
+) : Screen {
     @Composable
     override fun Content() {
         val transactionViewModel: TransactionViewModel = koinViewModel()
@@ -35,11 +39,32 @@ class AddTransactionScreen(private val onDismiss: () -> Unit = {}) : Screen {
         val categories by categoryViewModel.categories.collectAsState()
         var showDatePicker by remember { mutableStateOf(false) }
 
-        var description by remember { mutableStateOf("") }
-        var amount by remember { mutableStateOf("") }
+        var description by remember { mutableStateOf(transactionToEdit?.description ?: "") }
+        var amount by remember { mutableStateOf(transactionToEdit?.amount?.toString() ?: "") }
         var category by remember { mutableStateOf<Category?>(null) }
-        var date by remember { mutableStateOf(LocalDate.now()) }
+        var date by remember {
+            mutableStateOf(
+                transactionToEdit?.let {
+                    try {
+                        if (it.date.length >= 10) {
+                            LocalDate.parse(it.date.substring(0, 10))
+                        } else {
+                            LocalDate.now()
+                        }
+                    } catch (e: Exception) {
+                        LocalDate.now()
+                    }
+                } ?: LocalDate.now()
+            )
+        }
         var showNewCategoryDialog by remember { mutableStateOf(false) }
+        
+        // Load category when editing
+        LaunchedEffect(transactionToEdit, categories) {
+            if (transactionToEdit != null && category == null) {
+                category = categories.find { it.id == transactionToEdit.categoryId }
+            }
+        }
 
         val isSaveEnabled by remember(description, amount, category) {
             derivedStateOf {
@@ -66,21 +91,39 @@ class AddTransactionScreen(private val onDismiss: () -> Unit = {}) : Screen {
                 IconButton(onClick = { onDismiss() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
-                Text("Add Transaction", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    if (transactionToEdit != null) "Edit Transaction" else "Add Transaction",
+                    style = MaterialTheme.typography.titleLarge
+                )
                 IconButton(
                     onClick = {
                         val amt = amount.toDoubleOrNull()
                         if (amt != null && category != null) {
-                            val tx = Transaction(
-                                id = UUID.randomUUID().toString(),
-                                description = description.trim(),
-                                amount = amt,
-                                categoryId = category!!.id,
-                                type = category!!.type,
-                                date = date.toString(),
-                                createdAt = System.currentTimeMillis()
-                            )
-                            transactionViewModel.createTransaction(tx)
+                            val tx = if (transactionToEdit != null) {
+                                transactionToEdit.copy(
+                                    description = description.trim(),
+                                    amount = amt,
+                                    categoryId = category!!.id,
+                                    type = category!!.type,
+                                    date = date.toString()
+                                )
+                            } else {
+                                Transaction(
+                                    id = UUID.randomUUID().toString(),
+                                    description = description.trim(),
+                                    amount = amt,
+                                    categoryId = category!!.id,
+                                    type = category!!.type,
+                                    date = date.toString(),
+                                    createdAt = System.currentTimeMillis()
+                                )
+                            }
+                            
+                            if (transactionToEdit != null) {
+                                transactionViewModel.updateTransaction(tx)
+                            } else {
+                                transactionViewModel.createTransaction(tx)
+                            }
                             onDismiss()
                         }
                     },
@@ -188,9 +231,15 @@ class AddTransactionScreen(private val onDismiss: () -> Unit = {}) : Screen {
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        // TODO: call viewModel.addCategory(newCategoryName, selectedType)
-                        categoryViewModel.createCategory(newCategoryName, selectedType)
-                        showNewCategoryDialog = false
+                        if (newCategoryName.isNotBlank()) {
+                            categoryViewModel.createCategory(
+                                newCategoryName,
+                                selectedType,
+                                color = 0xFF2196F3,
+                                icon = null
+                            )
+                            showNewCategoryDialog = false
+                        }
                     }) { Text("OK") }
                 },
                 dismissButton = {

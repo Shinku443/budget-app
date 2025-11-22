@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,7 +26,8 @@ import com.projects.shinku443.budgetapp.model.Transaction
 fun TransactionList(
     transactions: List<Transaction>,
     onDelete: (Transaction) -> Unit,
-    onSwipeDelete: (Transaction) -> Unit = onDelete
+    onSwipeDelete: (Transaction) -> Unit = onDelete,
+    onEdit: (Transaction) -> Unit = {}
 ) {
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -92,15 +94,18 @@ fun TransactionList(
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "$${tx.amount}",
+                                    text = "$${String.format("%.2f", tx.amount)}",
                                     color = if (tx.type == CategoryType.EXPENSE) {
                                         Color.Red
                                     } else {
                                         Color.Green
                                     },
                                     style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(end = 16.dp)
+                                    modifier = Modifier.padding(end = 8.dp)
                                 )
+                                IconButton(onClick = { onEdit(tx) }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                }
                                 IconButton(onClick = { onDelete(tx) }) {
                                     Icon(Icons.Default.Delete, contentDescription = "Delete")
                                 }

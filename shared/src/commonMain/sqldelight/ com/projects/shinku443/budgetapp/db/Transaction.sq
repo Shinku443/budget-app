@@ -31,3 +31,13 @@ UPDATE AppTransaction SET is_deleted = 1 WHERE id = ?;
 
 markAsDeletedByIds:
 UPDATE AppTransaction SET is_deleted = 1 WHERE id IN ?;
+
+selectBetween:
+SELECT * FROM AppTransaction
+WHERE date >= ?1 AND date < ?2
+ORDER BY date DESC;
+
+selectByMonthPrefix:
+SELECT * FROM AppTransaction
+WHERE substr(date,1,7) = ?1
+ORDER BY date DESC;

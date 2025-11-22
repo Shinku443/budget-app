@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -13,8 +14,13 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.projects.shinku443.budgetapp.model.CategoryType
+import com.projects.shinku443.budgetapp.util.YearMonth
 import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
 import org.koin.androidx.compose.koinViewModel
+import java.time.Month
+import java.time.format.TextStyle
+import java.util.*
 
 class BudgetGoalsScreen : Screen {
 
@@ -23,11 +29,35 @@ class BudgetGoalsScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: BudgetViewModel = koinViewModel()
-        // Observe current goal and expenses
-        val monthlyGoal by remember { mutableFloatStateOf(viewModel.monthlyBudgetGoal) }
-        val expense by viewModel.expense.collectAsState()
+        val currentMonth by viewModel.currentMonth.collectAsState()
+        
+        // Allow user to select which month/year to set goal for
+        var selectedMonth by remember { mutableStateOf(currentMonth) }
+        var showMonthPicker by remember { mutableStateOf(false) }
+        
+        // Observe goal for selected month
+        val monthlyGoalFlow = remember(selectedMonth) {
+            viewModel.getBudgetGoalForMonth(selectedMonth)
+        }
+        val monthlyGoal by monthlyGoalFlow.collectAsState()
+        
+        // Get expenses for the selected month
+        val allTransactions by viewModel.transactions.collectAsState()
+        val expense = remember(allTransactions, selectedMonth) {
+            val monthStr = selectedMonth.toString()
+            allTransactions
+                .filter { it.date.startsWith(monthStr) && it.type == CategoryType.EXPENSE }
+                .sumOf { it.amount }
+        }
 
-        var newGoalText by remember { mutableStateOf(monthlyGoal.toString()) }
+        var newGoalText by remember(monthlyGoal) { 
+            mutableStateOf(if (monthlyGoal > 0) monthlyGoal.toString() else "") 
+        }
+        
+        // Update text when monthlyGoal changes
+        LaunchedEffect(monthlyGoal) {
+            newGoalText = if (monthlyGoal > 0) monthlyGoal.toString() else ""
+        }
 
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -42,7 +72,17 @@ class BudgetGoalsScreen : Screen {
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
-
+                
+                // Month/Year Selector
+                TextButton(
+                    onClick = { showMonthPicker = true },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text(
+                        text = "${Month.of(selectedMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault())} ${selectedMonth.year}",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
 
                 OutlinedTextField(
                     value = newGoalText,
@@ -74,7 +114,7 @@ class BudgetGoalsScreen : Screen {
                 onClick = {
                     val parsed = newGoalText.toFloatOrNull()
                     if (parsed != null && parsed > 0f) {
-                        viewModel.setMonthlyBudgetGoal(parsed)
+                        viewModel.setMonthlyBudgetGoal(parsed, selectedMonth)
                         navigator.pop()
                     }
                 },
@@ -84,6 +124,19 @@ class BudgetGoalsScreen : Screen {
             ) {
                 Icon(Icons.Default.Check, contentDescription = "Save")
             }
+        }
+        
+        // Month/Year Picker Dialog
+        if (showMonthPicker) {
+            MonthYearPickerDialog(
+                initialMonth = selectedMonth,
+                onDismiss = { showMonthPicker = false },
+                onConfirm = { month ->
+                    selectedMonth = month
+                    showMonthPicker = false
+                    // The goal text will update automatically via LaunchedEffect when monthlyGoal changes
+                }
+            )
         }
     }
 }

@@ -6,6 +6,7 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.projects.shinku443.budgetapp.api.ApiClient
 import com.projects.shinku443.budgetapp.db.BudgetDatabase
+import com.projects.shinku443.budgetapp.repository.BudgetRepository
 import com.projects.shinku443.budgetapp.repository.CategoryRepository
 import com.projects.shinku443.budgetapp.repository.SettingsRepository
 import com.projects.shinku443.budgetapp.repository.TransactionRepository
@@ -57,6 +58,7 @@ val appModule = module {
     // Repositories
     single { CategoryRepository(get(), get()) }
     single { TransactionRepository(get(), get()) }
+    single { BudgetRepository(get(), get()) }
 
     // Sync Managers & Service
     single { TransactionSyncManager(get(), get()) }
@@ -72,6 +74,7 @@ val appModule = module {
     viewModel { TransactionViewModel(get(), get()) }
     viewModel {
         BudgetViewModel(
+            get(),
             get(),
             get(),
             get(),

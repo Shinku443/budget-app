@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.projects.shinku443.budgetapp.model.Category
 import com.projects.shinku443.budgetapp.model.CategoryType
 import com.projects.shinku443.budgetapp.model.Transaction
+import com.projects.shinku443.budgetapp.model.BudgetGoal
+import com.projects.shinku443.budgetapp.repository.BudgetRepository
 import com.projects.shinku443.budgetapp.repository.CategoryRepository
 import com.projects.shinku443.budgetapp.repository.TransactionRepository
 import com.projects.shinku443.budgetapp.sync.CategorySyncManager
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 class BudgetViewModel(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
+    private val budgetRepository: BudgetRepository,
     private val syncService: SyncService,
     private val transactionSyncManager: TransactionSyncManager,
     private val categorySyncManager: CategorySyncManager
@@ -29,8 +32,13 @@ class BudgetViewModel(
 
     // Transactions and categories are owned by their respective viewmodels now.
 
-    private val _monthlyBudgetGoal = MutableStateFlow(0.0f)
-    val monthlyBudgetGoal: Float get() = _monthlyBudgetGoal.value
+    // Observe budget goal for current month - updates when month changes
+    val monthlyBudgetGoal: StateFlow<Float> = currentMonth
+        .flatMapLatest { month ->
+            budgetRepository.observeBudgetGoal(month)
+        }
+        .map { goal -> goal?.amount ?: 0.0f }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0.0f)
 
     val syncStatus: StateFlow<SyncStatus> = combine(
         transactionSyncManager.status,
@@ -50,7 +58,10 @@ class BudgetViewModel(
     // Derived flows
     // Aggregates will be derived via repository queries when needed.
     // For now, keep simple aggregate flows by observing repository directly.
-    val expense: StateFlow<Double> = transactionRepository.observeTransactions().map { list ->
+    val transactions: StateFlow<List<Transaction>> = transactionRepository.observeTransactions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
+    
+    val expense: StateFlow<Double> = transactions.map { list ->
         list.filter { it.type == CategoryType.EXPENSE }
             .sumOf { it.amount }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 0.0)
@@ -76,12 +87,23 @@ class BudgetViewModel(
 
     // CRUD for transactions/categories moved to TransactionViewModel/CategoryViewModel.
 
-    fun setMonthlyBudgetGoal(goal: Float) {
+    fun setMonthlyBudgetGoal(goal: Float, yearMonth: YearMonth? = null) {
         viewModelScope.launch {
-            _monthlyBudgetGoal.value = goal
-            // Optionally: persist this to a repository or database if you want it saved
-            // e.g. settingsRepository.saveMonthlyGoal(goal)
+            val targetMonth = yearMonth ?: currentMonth.value
+            val budgetGoal = BudgetGoal(
+                id = "${targetMonth.year}-${targetMonth.month}",
+                yearMonth = targetMonth,
+                amount = goal,
+                updatedAt = TimeWrapper.currentTimeMillis()
+            )
+            budgetRepository.setBudgetGoal(budgetGoal)
         }
+    }
+    
+    fun getBudgetGoalForMonth(yearMonth: YearMonth): StateFlow<Float> {
+        return budgetRepository.observeBudgetGoal(yearMonth)
+            .map { goal -> goal?.amount ?: 0.0f }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, 0.0f)
     }
 
     fun monthlyProgress(month: YearMonth): Flow<Pair<Double, Double>> {
