@@ -23,6 +23,7 @@ import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
 import com.projects.shinku443.budgetapp.viewmodel.TransactionViewModel
 import io.github.koalaplot.core.util.ExperimentalKoalaPlotApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.androidx.compose.koinViewModel
 import java.time.Month
 import java.time.format.TextStyle
@@ -37,7 +38,7 @@ class DashboardScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: BudgetViewModel = koinViewModel()
         val transactionViewModel: TransactionViewModel = koinViewModel()
-        val transactions by transactionViewModel.transactions.collectAsState()
+        val transactions by transactionViewModel.transactionsFiltered.collectAsState()
         val currentMonth by viewModel.currentMonth.collectAsState()
 
         var isRefreshing by remember { mutableStateOf(false) }
@@ -48,6 +49,9 @@ class DashboardScreen : Screen {
         val syncStatus by viewModel.syncStatus.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
         var showAddTransaction by remember { mutableStateOf(false) }
+
+        // Track items that are pending deletion, to be removed from the UI temporarily
+        val pendingDeleteIds = remember { mutableStateOf(setOf<String>()) }
 
         // Show sync status as snackbar
         LaunchedEffect(syncStatus) {
@@ -88,14 +92,17 @@ class DashboardScreen : Screen {
             }
         }
 
-        val pieChartData = remember(transactions) {
-            transactions.groupBy { it.type.name }
-                .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
+        val pieChartData by remember(transactions) {
+            mutableStateOf(
+                transactions.groupBy { it.type.name }
+                    .mapValues { (_, txs) -> txs.sumOf { it.amount }.toFloat() }
+            )
         }
 
         var selectedTab by remember { mutableStateOf(0) }
         val tabs = listOf("Transactions", "Breakdown", "Trends", "Budgets")
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 if (selectedTab == 0) { // Transactions tab
                     ExtendedFloatingActionButton(
@@ -151,12 +158,59 @@ class DashboardScreen : Screen {
 
                 when (selectedTab) {
                     0 -> {
-                        if (transactions.isEmpty()) {
+                        // Search field
+                        var query by remember { mutableStateOf("") }
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = {
+                                query = it
+                                transactionViewModel.setQuery(it)
+                            },
+                            label = { Text("Search transactions") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        val displayedTransactions = transactions.filter { it.id !in pendingDeleteIds.value }
+
+                        if (displayedTransactions.isEmpty()) {
                             Text("No transactions yet", modifier = Modifier.align(Alignment.CenterHorizontally))
                         } else {
                             TransactionList(
-                                transactions = transactions,
-                                onDelete = { tx -> transactionViewModel.deleteTransaction(tx.id) }
+                                transactions = displayedTransactions,
+                                onDelete = { tx ->
+                                    // Direct delete from icon
+                                    transactionViewModel.deleteTransaction(tx.id)
+                                },
+                                onSwipeDelete = { tx ->
+                                    coroutineScope.launch {
+                                        // 1. Add to pending list to hide from UI
+                                        pendingDeleteIds.value = pendingDeleteIds.value + tx.id
+
+                                        // 2. Show snackbar with timeout
+                                        val result = withTimeoutOrNull(5000) {
+                                            snackbarHostState.showSnackbar(
+                                                message = "Transaction deleted",
+                                                actionLabel = "Undo",
+                                                withDismissAction = true
+                                            )
+                                        }
+
+                                        // 3. Handle snackbar result
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            // UNDO: Remove from pending list to show in UI again
+                                            pendingDeleteIds.value -= tx.id
+                                        } else {
+                                            // TIMEOUT or DISMISS: Perform the actual deletion
+                                            transactionViewModel.deleteTransaction(tx.id)
+                                            // The item is already removed from the main list, so we just clean up our pending state
+                                            pendingDeleteIds.value -= tx.id
+                                        }
+                                    }
+                                }
                             )
                         }
                     }

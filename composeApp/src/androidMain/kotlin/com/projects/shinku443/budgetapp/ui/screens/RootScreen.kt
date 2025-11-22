@@ -103,7 +103,7 @@ fun RootScreen() {
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primary
-                        )
+                        ),
                     )
                 },
             ) { innerPadding ->
