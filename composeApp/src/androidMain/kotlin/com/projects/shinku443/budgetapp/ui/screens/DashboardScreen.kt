@@ -229,33 +229,38 @@ class DashboardScreen : Screen {
                     }
                 }
 
-                // Tabs with modern indicator
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            Modifier
-                                .tabIndicatorOffset(tabPositions[selectedTab])
-                                .padding(horizontal = 24.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            height = 3.dp
-                        )
-                    }
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTab == index,
-                            onClick = { selectedTab = index },
-                            text = {
-                                Text(
-                                    title,
-                                    style = if (selectedTab == index) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium
+
+                        ScrollableTabRow(
+                            selectedTabIndex = selectedTab,
+                            edgePadding = 16.dp,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            indicator = { tabPositions ->
+                                TabRowDefaults.Indicator(
+                                    Modifier
+                                        .tabIndicatorOffset(tabPositions[selectedTab])
+                                        .padding(horizontal = 24.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    height = 3.dp
                                 )
                             }
-                        )
-                    }
-                }
+                        ) {
+                            tabs.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = selectedTab == index,
+                                    onClick = { selectedTab = index },
+                                    modifier = Modifier.widthIn(min = 72.dp)
+                                ) {
+                                    Text(
+                                        text = title,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        softWrap = false,
+                                        style = if (selectedTab == index) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(horizontal = 8.dp)
+                                    )
+                                }
+                            }
+                        }
 
                 Spacer(Modifier.height(10.dp))
 
