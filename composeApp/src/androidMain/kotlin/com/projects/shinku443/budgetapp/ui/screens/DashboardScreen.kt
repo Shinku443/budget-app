@@ -1,5 +1,6 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -19,6 +20,7 @@ import com.projects.shinku443.budgetapp.ui.components.CategoryPieChart
 import com.projects.shinku443.budgetapp.ui.components.TransactionList
 import com.projects.shinku443.budgetapp.util.YearMonth
 import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
+import com.projects.shinku443.budgetapp.viewmodel.TransactionViewModel
 import io.github.koalaplot.core.util.ExperimentalKoalaPlotApi
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -28,12 +30,14 @@ import java.util.*
 
 
 class DashboardScreen : Screen {
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter") //TODO - look into this
     @Composable
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalKoalaPlotApi::class)
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: BudgetViewModel = koinViewModel()
-        val transactions by viewModel.transactions.collectAsState()
+        val transactionViewModel: TransactionViewModel = koinViewModel()
+        val transactions by transactionViewModel.transactions.collectAsState()
         val currentMonth by viewModel.currentMonth.collectAsState()
 
         var isRefreshing by remember { mutableStateOf(false) }
@@ -90,7 +94,7 @@ class DashboardScreen : Screen {
         }
 
         var selectedTab by remember { mutableStateOf(0) }
-        val tabs = listOf("Transactions", "Categories", "Trends", "Budgets")
+        val tabs = listOf("Transactions", "Breakdown", "Trends", "Budgets")
         Scaffold(
             floatingActionButton = {
                 if (selectedTab == 0) { // Transactions tab
@@ -104,7 +108,7 @@ class DashboardScreen : Screen {
                     )
                 }
             }
-        ) { innerPadding ->
+        ) {
             Column(
                 Modifier
                     .fillMaxSize()
@@ -152,7 +156,7 @@ class DashboardScreen : Screen {
                         } else {
                             TransactionList(
                                 transactions = transactions,
-                                onDelete = { tx -> viewModel.deleteTransaction(tx) }
+                                onDelete = { tx -> transactionViewModel.deleteTransaction(tx.id) }
                             )
                         }
                     }
@@ -199,10 +203,10 @@ class DashboardScreen : Screen {
             ModalBottomSheet(
                 onDismissRequest = { showAddTransaction = false }
             ) {
-                AddTransactionScreen().Content()
+                AddTransactionScreen(onDismiss = { showAddTransaction = false }).Content()
             }
+        }
     }
-}
 }
 
 @Composable

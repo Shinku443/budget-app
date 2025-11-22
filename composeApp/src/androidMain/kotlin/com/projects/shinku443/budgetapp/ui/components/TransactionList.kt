@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.projects.shinku443.budgetapp.model.CategoryType
 import com.projects.shinku443.budgetapp.model.Transaction
 
 @Composable
@@ -39,12 +40,25 @@ fun TransactionList(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text(tx.type.name, style = MaterialTheme.typography.bodyLarge)
-                        Text(tx.description ?: "", style = MaterialTheme.typography.bodySmall)
+                        Text(tx.description ?: "", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            tx.type.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (tx.type == CategoryType.EXPENSE) {
+                                Color.Red
+                            } else {
+                                Color.Green
+                            }
+                        )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "$${tx.amount}",
+                            color = if (tx.type == CategoryType.EXPENSE) {
+                                Color.Red
+                            } else {
+                                Color.Green
+                            },
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(end = 16.dp)
                         )

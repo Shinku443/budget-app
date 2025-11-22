@@ -16,13 +16,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.projects.shinku443.budgetapp.model.CategoryType
-import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
+import com.projects.shinku443.budgetapp.viewmodel.CategoryViewModel
+import com.projects.shinku443.budgetapp.viewmodel.TransactionViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun SpendingReport(viewModel: BudgetViewModel = koinViewModel()) {
-    val transactions by viewModel.transactions.collectAsState()
-    val categories by viewModel.categories.collectAsState()
+fun SpendingReport(
+    transactionViewModel: TransactionViewModel = koinViewModel(),
+    categoryViewModel: CategoryViewModel = koinViewModel()
+) {
+    val transactions by transactionViewModel.transactions.collectAsState()
+    val categories by categoryViewModel.categories.collectAsState()
 
     val categoryNames = remember(categories) {
         categories.associate { it.id to it.name }

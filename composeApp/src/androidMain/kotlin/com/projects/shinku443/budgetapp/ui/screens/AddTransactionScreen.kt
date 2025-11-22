@@ -18,19 +18,22 @@ import com.projects.shinku443.budgetapp.model.Category
 import com.projects.shinku443.budgetapp.model.CategoryType
 import com.projects.shinku443.budgetapp.model.Transaction
 import com.projects.shinku443.budgetapp.ui.components.CategorySelector
-import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
 import com.projects.shinku443.budgetapp.viewmodel.CategoryViewModel
+import com.projects.shinku443.budgetapp.viewmodel.TransactionViewModel
 import org.koin.androidx.compose.koinViewModel
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class AddTransactionScreen : Screen {
+class AddTransactionScreen(private val onDismiss: () -> Unit = {}) : Screen {
     @Composable
     override fun Content() {
-        val viewModel: BudgetViewModel = koinViewModel()
+        val transactionViewModel: TransactionViewModel = koinViewModel()
         val categoryViewModel: CategoryViewModel = koinViewModel()
-        val categories by viewModel.categories.collectAsState()
+        val categories by categoryViewModel.categories.collectAsState()
+        var showDatePicker by remember { mutableStateOf(false) }
 
         var description by remember { mutableStateOf("") }
         var amount by remember { mutableStateOf("") }
@@ -60,7 +63,7 @@ class AddTransactionScreen : Screen {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { navigator.pop() }) {
+                IconButton(onClick = { onDismiss() }) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                 }
                 Text("Add Transaction", style = MaterialTheme.typography.titleLarge)
@@ -77,8 +80,8 @@ class AddTransactionScreen : Screen {
                                 date = date.toString(),
                                 createdAt = System.currentTimeMillis()
                             )
-                            viewModel.addTransaction(tx)
-                            navigator.pop()
+                            transactionViewModel.createTransaction(tx)
+                            onDismiss()
                         }
                     },
                     enabled = isSaveEnabled
@@ -92,7 +95,11 @@ class AddTransactionScreen : Screen {
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Description") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = description.isBlank(),
+                supportingText = {
+                    if (description.isBlank()) Text("Description cannot be empty")
+                },
             )
 
             OutlinedTextField(
@@ -100,10 +107,18 @@ class AddTransactionScreen : Screen {
                 onValueChange = { amount = it },
                 label = { Text("Amount") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = amount.toDoubleOrNull()?.let { it <= 0 } ?: true,
+                supportingText = {
+                    if (amount.toDoubleOrNull() == null) {
+                        Text("Enter a valid number")
+                    } else if (amount.toDoubleOrNull()!! <= 0) {
+                        Text("Amount must be greater than 0")
+                    }
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            TextButton(onClick = { /* TODO: show date picker */ }) {
+            TextButton(onClick = { showDatePicker = true }) {
                 Text("Date: ${date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))}")
             }
 
@@ -113,6 +128,30 @@ class AddTransactionScreen : Screen {
                 onSelect = { category = it },
                 onCreateNew = { showNewCategoryDialog = true }
             )
+        }
+
+        // Date picker dialog
+        if (showDatePicker) {
+            val datePickerState = rememberDatePickerState(
+                initialSelectedDateMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            )
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let {
+                            val newDate = Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate()
+                            date = newDate
+                        }
+                        showDatePicker = false
+                    }) { Text("OK") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                }
+            ) {
+                DatePicker(state = datePickerState, showModeToggle = true)
+            }
         }
 
         // New category dialog

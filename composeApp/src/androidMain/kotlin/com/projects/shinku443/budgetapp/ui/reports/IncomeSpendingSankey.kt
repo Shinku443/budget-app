@@ -34,7 +34,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.projects.shinku443.budgetapp.model.CategoryType
-import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
+import com.projects.shinku443.budgetapp.viewmodel.CategoryViewModel
+import com.projects.shinku443.budgetapp.viewmodel.TransactionViewModel
 import org.koin.androidx.compose.koinViewModel
 import kotlin.math.min
 
@@ -188,10 +189,11 @@ fun SankeyChart(
 
 @Composable
 fun IncomeToExpensesToCategoriesSankey(
-    viewModel: BudgetViewModel = koinViewModel()
+    transactionViewModel: TransactionViewModel = koinViewModel(),
+    categoryViewModel: CategoryViewModel = koinViewModel()
 ) {
-    val transactions by viewModel.transactions.collectAsState()
-    val categories by viewModel.categories.collectAsState()
+    val transactions by transactionViewModel.transactions.collectAsState()
+    val categories by categoryViewModel.categories.collectAsState()
 
     // Lookup for category names by id
     val categoryNames = remember(categories) {
@@ -271,9 +273,12 @@ fun IncomeToExpensesToCategoriesSankey(
 
 
 @Composable
-fun IncomeSpendingSankey(viewModel: BudgetViewModel = koinViewModel()) {
-    val transactions by viewModel.transactions.collectAsState()
-    val categories by viewModel.categories.collectAsState()
+fun IncomeSpendingSankey(
+    transactionViewModel: TransactionViewModel = koinViewModel(),
+    categoryViewModel: CategoryViewModel = koinViewModel()
+) {
+    val transactions by transactionViewModel.transactions.collectAsState()
+    val categories by categoryViewModel.categories.collectAsState()
 
     // Income nodes (level 0)
     val incomeNodes = transactions.filter { it.type == CategoryType.INCOME }
