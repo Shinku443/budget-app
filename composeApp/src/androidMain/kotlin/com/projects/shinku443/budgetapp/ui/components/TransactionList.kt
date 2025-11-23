@@ -1,8 +1,6 @@
 package com.projects.shinku443.budgetapp.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -21,13 +19,12 @@ import androidx.compose.ui.unit.dp
 import com.projects.shinku443.budgetapp.model.CategoryType
 import com.projects.shinku443.budgetapp.model.Transaction
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TransactionList(
     transactions: List<Transaction>,
-    onDelete: (Transaction) -> Unit,
-    onSwipeDelete: (Transaction) -> Unit = onDelete,
-    onEdit: (Transaction) -> Unit = {}
+    onDeleteItem: (Transaction) -> Unit,
+    onEditItem: (Transaction) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -35,17 +32,19 @@ fun TransactionList(
     ) {
         items(transactions, key = { it.id }) { tx ->
             val dismissState = rememberSwipeToDismissBoxState(
-                confirmValueChange = { value ->
-                    if (value == SwipeToDismissBoxValue.StartToEnd || value == SwipeToDismissBoxValue.EndToStart) {
-                        onSwipeDelete(tx)
-                        true
-                    } else {
-                        false
+                confirmValueChange = {
+                    if (it != SwipeToDismissBoxValue.Settled) {
+                        onDeleteItem(tx)
                     }
+                    // Return false to prevent the SwipeToDismissBox from automatically
+                    // hiding the item. We want the LazyColumn's animation to trigger
+                    // when the item is removed from the list.
+                    false
                 }
             )
 
             SwipeToDismissBox(
+                modifier = Modifier.animateItem(),
                 state = dismissState,
                 enableDismissFromStartToEnd = true,
                 enableDismissFromEndToStart = true,
@@ -63,52 +62,39 @@ fun TransactionList(
                     }
                 }
             ) {
-                AnimatedVisibility(
-                    visible = dismissState.targetValue == SwipeToDismissBoxValue.Settled,
-                    exit = shrinkVertically() + fadeOut()
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color.Gray, shape = RoundedCornerShape(8.dp)),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Card(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, Color.Gray, shape = RoundedCornerShape(8.dp)),
-                        shape = RoundedCornerShape(8.dp)
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(tx.description ?: "", style = MaterialTheme.typography.bodyLarge)
-                                Text(
-                                    tx.type.name,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (tx.type == CategoryType.EXPENSE) {
-                                        Color.Red
-                                    } else {
-                                        Color.Green
-                                    }
-                                )
+                        Column {
+                            Text(tx.description ?: "", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                tx.type.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (tx.type == CategoryType.EXPENSE) Color.Red else Color.Green
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "$${String.format("%.2f", tx.amount)}",
+                                color = if (tx.type == CategoryType.EXPENSE) Color.Red else Color.Green,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            IconButton(onClick = { onEditItem(tx) }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Edit")
                             }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "$${String.format("%.2f", tx.amount)}",
-                                    color = if (tx.type == CategoryType.EXPENSE) {
-                                        Color.Red
-                                    } else {
-                                        Color.Green
-                                    },
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(end = 8.dp)
-                                )
-                                IconButton(onClick = { onEdit(tx) }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                                }
-                                IconButton(onClick = { onDelete(tx) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                                }
+                            IconButton(onClick = { onDeleteItem(tx) }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Delete")
                             }
                         }
                     }

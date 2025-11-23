@@ -62,6 +62,7 @@ class TransactionRepository(
 
     suspend fun deleteTransaction(id: String) {
         try {
+            Logger.d("TransactionRepository") { "Deleting transaction $id" }
             api.delete<Unit>("/transactions/$id")
             transactionQueries.deleteById(id)
         } catch (e: Exception) {

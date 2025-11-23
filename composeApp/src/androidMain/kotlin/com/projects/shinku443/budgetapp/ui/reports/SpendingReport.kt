@@ -25,7 +25,7 @@ fun SpendingReport(
     transactionViewModel: TransactionViewModel = koinViewModel(),
     categoryViewModel: CategoryViewModel = koinViewModel()
 ) {
-    val transactions by transactionViewModel.transactions.collectAsState()
+    val transactions by transactionViewModel.transactionsFiltered.collectAsState()
     val categories by categoryViewModel.categories.collectAsState()
 
     val categoryNames = remember(categories) {

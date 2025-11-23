@@ -58,7 +58,7 @@ fun RootScreen() {
                     Text(
                         "Budget App",
                         style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.padding(16.dp)
                     )
                     listOf(
@@ -102,7 +102,8 @@ fun RootScreen() {
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primary
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            titleContentColor = MaterialTheme.colorScheme.primary,
                         ),
                     )
                 },

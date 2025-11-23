@@ -192,7 +192,7 @@ fun IncomeToExpensesToCategoriesSankey(
     transactionViewModel: TransactionViewModel = koinViewModel(),
     categoryViewModel: CategoryViewModel = koinViewModel()
 ) {
-    val transactions by transactionViewModel.transactions.collectAsState()
+    val transactions by transactionViewModel.transactionsFiltered.collectAsState()
     val categories by categoryViewModel.categories.collectAsState()
 
     // Lookup for category names by id
@@ -277,7 +277,7 @@ fun IncomeSpendingSankey(
     transactionViewModel: TransactionViewModel = koinViewModel(),
     categoryViewModel: CategoryViewModel = koinViewModel()
 ) {
-    val transactions by transactionViewModel.transactions.collectAsState()
+    val transactions by transactionViewModel.transactionsFiltered.collectAsState()
     val categories by categoryViewModel.categories.collectAsState()
 
     // Income nodes (level 0)

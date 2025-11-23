@@ -5,6 +5,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.projects.shinku443.budgetapp.api.ApiClient
+import com.projects.shinku443.budgetapp.connectivity.ConnectivityMonitor
 import com.projects.shinku443.budgetapp.db.BudgetDatabase
 import com.projects.shinku443.budgetapp.repository.BudgetRepository
 import com.projects.shinku443.budgetapp.repository.CategoryRepository
@@ -63,7 +64,8 @@ val appModule = module {
     // Sync Managers & Service
     single { TransactionSyncManager(get(), get()) }
     single { CategorySyncManager(get(), get()) }
-    single { SyncService(get(), get()) }
+    single { ConnectivityMonitor(androidContext()).apply { startMonitoring() } }
+    single { SyncService(get(), get(), get()) }
 
     // Settings
     single { androidContext().settingsDataStore }
@@ -78,8 +80,6 @@ val appModule = module {
             get(),
             get(),
             get(),
-            get(),
-            get()
         )
     }
     viewModel { SettingsViewModel(get(), get()) }

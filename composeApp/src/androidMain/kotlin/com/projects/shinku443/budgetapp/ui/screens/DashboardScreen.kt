@@ -20,17 +20,15 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.projects.shinku443.budgetapp.sync.SyncStatus
-import com.projects.shinku443.budgetapp.ui.components.CategoryPieChart
-import com.projects.shinku443.budgetapp.ui.components.MonthlyComparison
-import com.projects.shinku443.budgetapp.ui.components.MonthlyTrendChart
-import com.projects.shinku443.budgetapp.ui.components.TransactionList
+import co.touchlab.kermit.Logger
+import com.projects.shinku443.budgetapp.model.Transaction
+import com.projects.shinku443.budgetapp.ui.components.*
 import com.projects.shinku443.budgetapp.util.YearMonth
 import com.projects.shinku443.budgetapp.viewmodel.BudgetViewModel
 import com.projects.shinku443.budgetapp.viewmodel.TransactionViewModel
+import com.projects.shinku443.budgetapp.viewmodel.UiState
 import io.github.koalaplot.core.util.ExperimentalKoalaPlotApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import org.koin.androidx.compose.koinViewModel
 import java.time.Month
 import java.time.format.TextStyle
@@ -43,76 +41,29 @@ class DashboardScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: BudgetViewModel = koinViewModel()
         val transactionViewModel: TransactionViewModel = koinViewModel()
+
         val transactions by transactionViewModel.transactionsFiltered.collectAsState()
-        val allTransactions by transactionViewModel.transactions.collectAsState()
-        val currentMonth by viewModel.currentMonth.collectAsState()
+        val currentMonth by transactionViewModel.filterMonth.collectAsState()
         val expense by viewModel.expense.collectAsState()
+        val uiState by viewModel.uiState.collectAsState()
 
-        // Local UI selection for month/year (stays in sync with viewModel.currentMonth)
-        var selectedMonthLocal by remember { mutableStateOf(currentMonth) }
-        LaunchedEffect(currentMonth) {
-            selectedMonthLocal = currentMonth
+        val previousMonth = remember(currentMonth) {
+            if (currentMonth.month == 1) YearMonth(currentMonth.year - 1, 12)
+            else YearMonth(currentMonth.year, currentMonth.month - 1)
         }
-
-        // Filter transactions by the locally selected month for immediate UI updates
-        val selectedMonthStr = selectedMonthLocal.toString()
-        val currentMonthTransactions = remember(allTransactions, selectedMonthStr) {
-            allTransactions.filter { it.date.startsWith(selectedMonthStr) }
-        }
-
-        val previousMonth = remember(selectedMonthLocal) {
-            if (selectedMonthLocal.month == 1) {
-                YearMonth(selectedMonthLocal.year - 1, 12)
-            } else {
-                YearMonth(selectedMonthLocal.year, selectedMonthLocal.month - 1)
-            }
-        }
-        val previousMonthStr = previousMonth.toString()
-        val previousMonthTransactions = remember(allTransactions, previousMonthStr) {
-            allTransactions.filter { it.date.startsWith(previousMonthStr) }
-        }
+        val previousMonthTransactions by transactionViewModel.getTransactionsForMonth(previousMonth)
+            .collectAsState(initial = emptyList())
 
         var isRefreshing by remember { mutableStateOf(false) }
         val pullToRefreshState = rememberPullToRefreshState()
         val coroutineScope = rememberCoroutineScope()
-
         var showPicker by remember { mutableStateOf(false) }
-        val syncStatus by viewModel.syncStatus.collectAsState()
         val snackbarHostState = remember { SnackbarHostState() }
         var showAddTransaction by remember { mutableStateOf(false) }
-        var transactionToEdit by remember { mutableStateOf<com.projects.shinku443.budgetapp.model.Transaction?>(null) }
+        var transactionToEdit by remember { mutableStateOf<Transaction?>(null) }
 
-        // Track items that are pending deletion, to be removed from the UI temporarily
-        val pendingDeleteIds = remember { mutableStateOf(setOf<String>()) }
-
-        // Show sync status as snackbar
-        LaunchedEffect(syncStatus) {
-            when (syncStatus) {
-                is SyncStatus.Syncing -> coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Syncing data…")
-                }
-
-                is SyncStatus.Success -> {
-                    val ts = (syncStatus as SyncStatus.Success).timestamp
-                    val time = java.time.Instant.ofEpochMilli(ts)
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Last synced at $time")
-                    }
-                }
-
-                is SyncStatus.Error -> {
-                    val msg = (syncStatus as SyncStatus.Error).message
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar("Sync failed: $msg")
-                    }
-                }
-
-                else -> {}
-            }
-        }
-
-        // Trigger initial sync for the current month
-        LaunchedEffect(Unit) {
+        LaunchedEffect(currentMonth) {
+            Logger.d("DashboardScreen:: Syncing data for month: $currentMonth")
             viewModel.syncDataForMonth(currentMonth)
         }
 
@@ -134,9 +85,15 @@ class DashboardScreen : Screen {
         var selectedTab by remember { mutableStateOf(0) }
         val tabs = listOf("Transactions", "Breakdown", "Trends", "Budgets", "Comparison")
         Scaffold(
+            topBar = {
+                if (uiState == UiState.Syncing) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+                SyncStatusBanner(uiState = uiState)
+            },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
-                if (selectedTab == 0) { // Transactions tab
+                if (selectedTab == 0) {
                     ExtendedFloatingActionButton(
                         onClick = { showAddTransaction = true },
                         containerColor = MaterialTheme.colorScheme.primary,
@@ -157,7 +114,6 @@ class DashboardScreen : Screen {
                         onRefresh = onRefresh
                     ),
             ) {
-                // Modern Month Selector Header (uses local selection)
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     tonalElevation = 6.dp,
@@ -175,15 +131,8 @@ class DashboardScreen : Screen {
                     ) {
                         IconButton(
                             onClick = {
-                                // go to previous month (update local state and ask VM to sync)
-                                val cm = selectedMonthLocal
-                                val prev =
-                                    if (cm.month == 1) YearMonth(cm.year - 1, 12) else YearMonth(cm.year, cm.month - 1)
-                                selectedMonthLocal = prev
-                                viewModel.syncDataForMonth(prev)
-//                                transactionViewModel.transactions
-//                                transactionViewModel.setFilterMonth(prev)
-
+                                val prev = if (currentMonth.month == 1) YearMonth(currentMonth.year - 1, 12) else YearMonth(currentMonth.year, currentMonth.month - 1)
+                                transactionViewModel.setFilterMonth(prev)
                             },
                             modifier = Modifier.size(36.dp)
                         ) {
@@ -197,14 +146,14 @@ class DashboardScreen : Screen {
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = Month.of(selectedMonthLocal.month).getDisplayName(TextStyle.FULL, Locale.getDefault())
+                                text = Month.of(currentMonth.month).getDisplayName(TextStyle.FULL, Locale.getDefault())
                                     .uppercase(Locale.getDefault()),
                                 style = MaterialTheme.typography.headlineSmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                text = selectedMonthLocal.year.toString(),
+                                text = currentMonth.year.toString(),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -214,13 +163,8 @@ class DashboardScreen : Screen {
 
                         IconButton(
                             onClick = {
-                                // go to next month (update local state and ask VM to sync)
-                                val cm = selectedMonthLocal
-                                val next =
-                                    if (cm.month == 12) YearMonth(cm.year + 1, 1) else YearMonth(cm.year, cm.month + 1)
-                                selectedMonthLocal = next
-                                viewModel.syncDataForMonth(next)
-//                                transactionViewModel.setFilterMonth(next)
+                                val next = if (currentMonth.month == 12) YearMonth(currentMonth.year + 1, 1) else YearMonth(currentMonth.year, currentMonth.month + 1)
+                                transactionViewModel.setFilterMonth(next)
                             },
                             modifier = Modifier.size(36.dp)
                         ) {
@@ -229,44 +173,42 @@ class DashboardScreen : Screen {
                     }
                 }
 
-
-                        ScrollableTabRow(
-                            selectedTabIndex = selectedTab,
-                            edgePadding = 16.dp,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            indicator = { tabPositions ->
-                                TabRowDefaults.Indicator(
-                                    Modifier
-                                        .tabIndicatorOffset(tabPositions[selectedTab])
-                                        .padding(horizontal = 24.dp),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    height = 3.dp
-                                )
-                            }
+                ScrollableTabRow(
+                    selectedTabIndex = selectedTab,
+                    edgePadding = 16.dp,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            Modifier
+                                .tabIndicatorOffset(tabPositions[selectedTab])
+                                .padding(horizontal = 24.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            height = 3.dp
+                        )
+                    }
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            modifier = Modifier.widthIn(min = 72.dp)
                         ) {
-                            tabs.forEachIndexed { index, title ->
-                                Tab(
-                                    selected = selectedTab == index,
-                                    onClick = { selectedTab = index },
-                                    modifier = Modifier.widthIn(min = 72.dp)
-                                ) {
-                                    Text(
-                                        text = title,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        softWrap = false,
-                                        style = if (selectedTab == index) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(horizontal = 8.dp)
-                                    )
-                                }
-                            }
+                            Text(
+                                text = title,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                softWrap = false,
+                                style = if (selectedTab == index) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
                         }
+                    }
+                }
 
                 Spacer(Modifier.height(10.dp))
 
                 when (selectedTab) {
                     0 -> {
-                        // Search field
                         var query by remember { mutableStateOf("") }
                         OutlinedTextField(
                             value = query,
@@ -283,9 +225,7 @@ class DashboardScreen : Screen {
 
                         Spacer(Modifier.height(8.dp))
 
-                        val displayedTransactions = transactions.filter { it.id !in pendingDeleteIds.value }
-
-                        if (displayedTransactions.isEmpty()) {
+                        if (transactions.isEmpty()) {
                             Text(
                                 "No transactions yet",
                                 modifier = Modifier
@@ -295,45 +235,36 @@ class DashboardScreen : Screen {
                             )
                         } else {
                             TransactionList(
-                                transactions = displayedTransactions,
-                                onDelete = { tx ->
-                                    // Direct delete from icon
-                                    transactionViewModel.deleteTransaction(tx.id)
-                                },
-                                onEdit = { tx ->
+                                transactions = transactions,
+                                onEditItem = { tx ->
                                     transactionToEdit = tx
                                     showAddTransaction = true
                                 },
-                                onSwipeDelete = { tx ->
+                                onDeleteItem = { tx ->
                                     coroutineScope.launch {
-                                        // 1. Add to pending list to hide from UI
-                                        pendingDeleteIds.value = pendingDeleteIds.value + tx.id
+                                        // 1. Stage for deletion in the ViewModel. This hides it from the UI.
+                                        transactionViewModel.stageTransactionForDeletion(tx.id)
 
-                                        // 2. Show snackbar with timeout
-                                        val result = withTimeoutOrNull(5000) {
-                                            snackbarHostState.showSnackbar(
-                                                message = "Transaction deleted",
-                                                actionLabel = "Undo",
-                                                withDismissAction = true
-                                            )
-                                        }
+                                        // 2. Show snackbar and wait for the result.
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Transaction deleted",
+                                            actionLabel = "Undo",
+                                            withDismissAction = true
+                                        )
 
-                                        // 3. Handle snackbar result
+                                        // 3. Handle the result.
                                         if (result == SnackbarResult.ActionPerformed) {
-                                            // UNDO: Remove from pending list to show in UI again
-                                            pendingDeleteIds.value -= tx.id
+                                            // UNDO: Unstage it. This makes it visible again.
+                                            transactionViewModel.unstageTransactionForDeletion(tx.id)
                                         } else {
-                                            // TIMEOUT or DISMISS: Perform the actual deletion
+                                            // TIMEOUT or DISMISS: Perform the actual deletion.
                                             transactionViewModel.deleteTransaction(tx.id)
-                                            // The item is already removed from the main list, so we just clean up our pending state
-                                            pendingDeleteIds.value -= tx.id
                                         }
                                     }
                                 }
                             )
                         }
                     }
-
                     1 -> {
                         Text(
                             modifier = Modifier.fillMaxWidth(),
@@ -350,19 +281,15 @@ class DashboardScreen : Screen {
                             )
                         }
                     }
-
                     2 -> {
-                        // Trends chart - show all transactions for selected month
                         MonthlyTrendChart(
-                            transactions = currentMonthTransactions,
+                            transactions = transactions,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         )
                     }
-
                     3 -> {
-                        // Budget progress
                         val budgetGoal by viewModel.monthlyBudgetGoal.collectAsState()
                         val currentExpenses = expense
                         val progress = if (budgetGoal > 0) {
@@ -426,13 +353,11 @@ class DashboardScreen : Screen {
                             }
                         }
                     }
-
                     4 -> {
-                        // Monthly comparison
                         MonthlyComparison(
-                            currentMonthTransactions = currentMonthTransactions,
+                            currentMonthTransactions = transactions,
                             previousMonthTransactions = previousMonthTransactions,
-                            currentMonth = selectedMonthLocal,
+                            currentMonth = currentMonth,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp)
@@ -443,12 +368,10 @@ class DashboardScreen : Screen {
 
             if (showPicker) {
                 MonthYearPickerDialog(
-                    initialMonth = selectedMonthLocal,
+                    initialMonth = currentMonth,
                     onDismiss = { showPicker = false },
                     onConfirm = { selectedMonth ->
-                        selectedMonthLocal = selectedMonth
-                        viewModel.syncDataForMonth(selectedMonth)
-//                        transactionViewModel.setFilterMonth(selectedMonth)
+                        transactionViewModel.setFilterMonth(selectedMonth)
                         showPicker = false
                     }
                 )
@@ -491,7 +414,6 @@ fun MonthYearPickerDialog(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Month Dropdown
                 var monthExpanded by remember { mutableStateOf(false) }
                 Box {
                     TextButton(onClick = { monthExpanded = true }) {
@@ -510,7 +432,6 @@ fun MonthYearPickerDialog(
                     }
                 }
 
-                // Year TextField
                 var yearText by remember(selectedMonth.year) { mutableStateOf(selectedMonth.year.toString()) }
                 OutlinedTextField(
                     value = yearText,

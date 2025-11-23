@@ -14,6 +14,17 @@ data class Category(
     val icon: String? = null
 )
 
+fun Category.toCategoryRequest(): CategoryRequest {
+    return CategoryRequest(
+        name = this.name,
+        type = this.type,
+        isActive = this.isActive,
+        color = this.color,
+        icon = this.icon
+    )
+}
+
+
 @Serializable
 data class CategoryRequest(
     val name: String,

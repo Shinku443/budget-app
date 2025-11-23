@@ -26,13 +26,13 @@ deleteById:
 DELETE FROM Category WHERE id = ?;
 
 deleteByIds:
-DELETE FROM Category WHERE id IN ?;
+DELETE FROM Category WHERE id IN :idList;
 
 markAsDeleted:
 UPDATE Category SET is_deleted = 1 WHERE id = ?;
 
 markAsDeletedByIds:
-UPDATE Category SET is_deleted = 1 WHERE id IN ?;
+UPDATE Category SET is_deleted = 1 WHERE id IN :idList;
 
 renameCategory:
 UPDATE Category SET name = ? WHERE id = ?;
