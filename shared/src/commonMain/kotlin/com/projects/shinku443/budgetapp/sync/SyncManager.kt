@@ -17,6 +17,12 @@ interface SyncManager {
      * @param month An optional month to scope the sync to.
      */
     suspend fun sync(month: YearMonth? = null)
+
+    /**
+     * Reports an error to the sync manager, updating its status.
+     * This is a fallback for when an exception might escape the manager's internal handling.
+     */
+    fun reportError(message: String)
 }
 
 sealed class SyncStatus {

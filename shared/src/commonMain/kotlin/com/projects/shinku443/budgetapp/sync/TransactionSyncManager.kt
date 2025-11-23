@@ -46,6 +46,8 @@ class TransactionSyncManager(
             return false
         } catch (e: Exception) {
             Logger.e("TransactionSyncManager") { "Could not check for sync, assuming needed: ${e.message}" }
+            // If we can't check, assume a sync is needed, but also report the error.
+            _status.value = SyncStatus.Error("Failed to check for sync: ${e.message}")
             return true
         }
     }
@@ -55,11 +57,6 @@ class TransactionSyncManager(
             Logger.d("TransactionSyncManager") { "Sync already in progress." }
             return
         }
-        if (!needsSync(month)) {
-            _status.value = SyncStatus.Success(getTimeMillis())
-            return
-        }
-
         _status.value = SyncStatus.Syncing
         try {
             val endpoint = if (month != null) "/transactions?month=$month" else "/transactions"
@@ -102,9 +99,13 @@ class TransactionSyncManager(
             _status.value = SyncStatus.Success(getTimeMillis())
             Logger.d("TransactionSyncManager") { "Sync successful." }
         } catch (e: Exception) {
-            _status.value = SyncStatus.Error("Failed to sync transactions: ${e.message}")
+            reportError("Failed to sync transactions: ${e.message}")
             Logger.e("TransactionSyncManager") { "Failed to sync transactions: ${e.message}" }
         }
+    }
+
+    override fun reportError(message: String) {
+        _status.value = SyncStatus.Error(message)
     }
 
     private fun getLocalTransactions(month: YearMonth?): List<Transaction> {

@@ -40,34 +40,40 @@ class CategorySyncManager(
             return true
         }
 
-        // Fetch remote and local categories
-        val remoteCats = api.get<List<Category>>("/categories")
-        val localCats = categoryQueries.selectAll().executeAsList().map { it.toDomain() }
+        try {
+            // Fetch remote and local categories
+            val remoteCats = api.get<List<Category>>("/categories")
+            val localCats = categoryQueries.selectAll().executeAsList().map { it.toDomain() }
 
-        // Check for size difference
-        if (remoteCats.size != localCats.size) {
-            Logger.d("CategorySyncManager") { "Sync needed: Different number of categories." }
+            // Check for size difference
+            if (remoteCats.size != localCats.size) {
+                Logger.d("CategorySyncManager") { "Sync needed: Different number of categories." }
+                return true
+            }
+
+            // Check for content difference
+            val remoteSet = remoteCats.toSet()
+            val localSet = localCats.toSet()
+            if (remoteSet != localSet) {
+                Logger.d("CategorySyncManager") { "Sync needed: Category content differs." }
+                return true
+            }
+
+            Logger.d("CategorySyncManager") { "No sync needed for categories." }
+            return false
+        } catch (e: Exception) {
+            Logger.e("CategorySyncManager") { "Could not check for sync, assuming needed: ${e.message}" }
+            // If we can't check, assume a sync is needed, but also report the error.
+            _status.value = SyncStatus.Error("Failed to check for sync: ${e.message}")
             return true
         }
-
-        // Check for content difference
-        val remoteSet = remoteCats.toSet()
-        val localSet = localCats.toSet()
-        if (remoteSet != localSet) {
-            Logger.d("CategorySyncManager") { "Sync needed: Category content differs." }
-            return true
-        }
-
-        Logger.d("CategorySyncManager") { "No sync needed for categories." }
-        return false
     }
 
     override suspend fun sync(month: YearMonth?) {
-        if (!needsSync()) {
-            _status.value = SyncStatus.Success(getTimeMillis())
+        if (_status.value is SyncStatus.Syncing) {
+            Logger.d("CategorySyncManager") { "Sync already in progress." }
             return
         }
-
         _status.value = SyncStatus.Syncing
         try {
             val remoteCats = api.get<List<Category>>("/categories")
@@ -136,8 +142,12 @@ class CategorySyncManager(
 
             _status.value = SyncStatus.Success(getTimeMillis())
         } catch (e: Exception) {
-            _status.value = SyncStatus.Error("Failed to sync categories: ${e.message}")
+            reportError("Failed to sync categories: ${e.message}")
             Logger.e("CategorySyncManager") { "Failed to sync categories: ${e.message}" }
         }
+    }
+
+    override fun reportError(message: String) {
+        _status.value = SyncStatus.Error(message)
     }
 }

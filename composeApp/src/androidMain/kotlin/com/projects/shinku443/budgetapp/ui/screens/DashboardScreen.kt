@@ -1,5 +1,8 @@
 package com.projects.shinku443.budgetapp.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +17,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,12 +88,26 @@ class DashboardScreen : Screen {
 
         var selectedTab by remember { mutableStateOf(0) }
         val tabs = listOf("Transactions", "Breakdown", "Trends", "Budgets", "Comparison")
+
         Scaffold(
             topBar = {
-                if (uiState == UiState.Syncing) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                // The topBar now only contains the banner, which handles its own visibility.
+                AnimatedVisibility(
+                    visible = uiState is UiState.Offline || uiState is UiState.Error,
+                    enter = slideInVertically(initialOffsetY = { -it }),
+                    exit = slideOutVertically(targetOffsetY = { -it })
+                ) {
+                    val (backgroundColor, text, textColor) = when (uiState) {
+                        is UiState.Offline -> Triple(MaterialTheme.colorScheme.tertiaryContainer, "Offline mode: Data is saved locally.", MaterialTheme.colorScheme.onTertiaryContainer)
+                        is UiState.Error -> Triple(MaterialTheme.colorScheme.errorContainer, "Connectivity Issues - Offline Mode", MaterialTheme.colorScheme.onErrorContainer)
+                        else -> Triple(MaterialTheme.colorScheme.surface, "", MaterialTheme.colorScheme.onSurface) // Should not be visible
+                    }
+                    SyncStatusBanner(
+                        text = text,
+                        backgroundColor = backgroundColor,
+                        textColor = textColor
+                    )
                 }
-                SyncStatusBanner(uiState = uiState)
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
@@ -105,8 +123,16 @@ class DashboardScreen : Screen {
             }
         ) { innerPadding ->
             Column(
+                // Apply horizontal and bottom padding from Scaffold, but explicitly set top to 0.dp
+                // This prevents double-padding if Scaffold's top padding calculation is off
+                // due to the dynamic topBar content.
                 Modifier
-                    .padding(innerPadding)
+                    .padding(
+                        start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                        end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                        bottom = innerPadding.calculateBottomPadding(),
+                        top = 0.dp // Explicitly set top padding to 0
+                    )
                     .fillMaxSize()
                     .pullToRefresh(
                         state = pullToRefreshState,
@@ -114,6 +140,10 @@ class DashboardScreen : Screen {
                         onRefresh = onRefresh
                     ),
             ) {
+                if (uiState == UiState.Syncing) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     tonalElevation = 6.dp,
@@ -242,22 +272,15 @@ class DashboardScreen : Screen {
                                 },
                                 onDeleteItem = { tx ->
                                     coroutineScope.launch {
-                                        // 1. Stage for deletion in the ViewModel. This hides it from the UI.
                                         transactionViewModel.stageTransactionForDeletion(tx.id)
-
-                                        // 2. Show snackbar and wait for the result.
                                         val result = snackbarHostState.showSnackbar(
                                             message = "Transaction deleted",
                                             actionLabel = "Undo",
                                             withDismissAction = true
                                         )
-
-                                        // 3. Handle the result.
                                         if (result == SnackbarResult.ActionPerformed) {
-                                            // UNDO: Unstage it. This makes it visible again.
                                             transactionViewModel.unstageTransactionForDeletion(tx.id)
                                         } else {
-                                            // TIMEOUT or DISMISS: Perform the actual deletion.
                                             transactionViewModel.deleteTransaction(tx.id)
                                         }
                                     }

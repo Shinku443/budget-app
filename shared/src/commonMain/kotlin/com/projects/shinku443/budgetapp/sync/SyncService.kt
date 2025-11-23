@@ -7,6 +7,7 @@ import com.projects.shinku443.budgetapp.viewmodel.UiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -20,19 +21,33 @@ class SyncService(
 ) {
     private val serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+    // Internal flow to track if any sync manager is actively syncing
+    private val _isSyncActive = combine(
+        transactionSyncManager.status,
+        categorySyncManager.status
+    ) { txStatus, catStatus ->
+        txStatus is SyncStatus.Syncing || catStatus is SyncStatus.Syncing
+    }.stateIn(serviceScope, SharingStarted.Eagerly, false)
+
+    // Debounced version of _isSyncActive to prevent flickering for very fast syncs
+    private val _showSyncingIndicator = _isSyncActive
+        .debounce { isActive -> if (isActive) 500L else 0L } // Delay showing 'Syncing' for 500ms, but hide immediately
+        .stateIn(serviceScope, SharingStarted.Eagerly, false)
+
     // Combine the status of all sync managers into a single UI state.
     val overallState: StateFlow<UiState> = combine(
+        _showSyncingIndicator, // Use the debounced indicator
         transactionSyncManager.status,
         categorySyncManager.status,
         connectivityMonitor.connectionState
-    ) { txStatus, catStatus, connection ->
+    ) { showSyncing, txStatus, catStatus, connection ->
         // If disconnected, that's the most important state.
         if (connection is ConnectionState.Disconnected) {
             return@combine UiState.Offline
         }
 
-        // If any manager is syncing, the overall state is Syncing.
-        if (txStatus is SyncStatus.Syncing || catStatus is SyncStatus.Syncing) {
+        // If the debounced indicator says we should show syncing, then show it.
+        if (showSyncing) {
             return@combine UiState.Syncing
         }
 
@@ -59,14 +74,26 @@ class SyncService(
      */
     fun syncAll(month: YearMonth? = null) {
         serviceScope.launch {
-            // Wait until the connection is confirmed before proceeding.
-            // This avoids a race condition on app startup.
-            connectivityMonitor.connectionState.first { it is ConnectionState.Connected }
+            // Removed the problematic connection check here.
+            // Let individual sync managers handle API errors and report their status.
 
-            // Launch sync jobs for each manager.
-            // The `overallState` will automatically update as each manager changes its status.
-            launch { transactionSyncManager.sync(month) }
-            launch { categorySyncManager.sync() }
+            // Launch sync jobs for each manager, wrapping each in a try-catch for robustness.
+            launch {
+                try {
+                    transactionSyncManager.sync(month)
+                } catch (e: Exception) {
+                    // Fallback error reporting if an exception escapes the manager's internal handling.
+                    transactionSyncManager.reportError(e.message ?: "Unknown transaction sync error")
+                }
+            }
+            launch {
+                try {
+                    categorySyncManager.sync()
+                } catch (e: Exception) {
+                    // Fallback error reporting if an exception escapes the manager's internal handling.
+                    categorySyncManager.reportError(e.message ?: "Unknown category sync error")
+                }
+            }
         }
     }
 }
