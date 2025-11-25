@@ -7,7 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.projects.shinku443.budgetapp.ui.screens.BudgetAppRoot
+import com.projects.shinku443.budgetapp.ui.screens.SplashScreen
 import com.projects.shinku443.budgetapp.ui.screens.StagingScreen
 import com.projects.shinku443.budgetapp.ui.theme.AppTheme
 
@@ -15,13 +17,19 @@ import com.projects.shinku443.budgetapp.ui.theme.AppTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        installSplashScreen()
         createNotificationChannel()
         setContent {
             AppTheme {
                 var loggedIn by remember { mutableStateOf(false) }
+                var showSplash by remember { mutableStateOf(true) }
 
                 if (!loggedIn) {
-                    StagingScreen(onLoginSuccess = { loggedIn = true })
+                    if (showSplash) {
+                        SplashScreen(onFinished = { showSplash = false })
+                    } else {
+                        StagingScreen(onLoginSuccess = { loggedIn = true })
+                    }
                 } else {
                     BudgetAppRoot()
                 }
@@ -46,5 +54,5 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    App()
+//    App()
 }

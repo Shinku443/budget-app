@@ -12,7 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import budgetapp.composeapp.generated.resources.Res
 import co.touchlab.kermit.Logger
 
 @Composable
@@ -38,7 +40,7 @@ fun StagingScreen(onLoginSuccess: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Welcome to BudgetApp")
+        Text("Welcome to Emperor Wallet")
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

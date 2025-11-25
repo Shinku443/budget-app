@@ -2,6 +2,7 @@ package com.projects.shinku443.budgetapp.ui.screens
 
 import android.Manifest
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -18,9 +19,11 @@ import com.projects.shinku443.budgetapp.notifications.cancelDailyReminder
 import com.projects.shinku443.budgetapp.notifications.scheduleDailyReminder
 import com.projects.shinku443.budgetapp.notifications.scheduleTestReminder
 import com.projects.shinku443.budgetapp.settings.Settings.Theme
+import com.projects.shinku443.budgetapp.settings.SettingsManager
 import com.projects.shinku443.budgetapp.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.getKoin
 
 //Can use later for generic list render
 //sealed class SettingItem(val title: String) {
@@ -40,11 +43,15 @@ class SettingsScreen : Screen {
 }
 
 @Composable
-fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsContent() {
+    val context = LocalContext.current
+
+    val viewModel: SettingsViewModel = koinViewModel()
+    val settingsManager: SettingsManager = SettingsManager(context)
     val theme by viewModel.theme.collectAsState()
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val language by viewModel.language.collectAsState()
-    val context = LocalContext.current
+    var apiKey by remember { mutableStateOf("") }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -73,7 +80,6 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
-
 
 
         // Theme toggle
@@ -121,12 +127,31 @@ fun SettingsContent(viewModel: SettingsViewModel = koinViewModel()) {
             )
         }
 
+        Text("Enter your OpenAI API Key")
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = apiKey,
+            onValueChange = { apiKey = it },
+            label = { Text("API Key") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(
+            onClick = {
+                settingsManager.saveApiKey(apiKey)
+                Toast.makeText(context, "API Key saved", Toast.LENGTH_SHORT).show()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Save")
+        }
+
         Spacer(Modifier.height(16.dp))
 
         // Auth stubs
 
         Button(
-            onClick = {  viewModel.setLoggedIn(false) },
+            onClick = { viewModel.setLoggedIn(false) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Log out")

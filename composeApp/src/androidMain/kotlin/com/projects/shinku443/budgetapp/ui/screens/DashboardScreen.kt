@@ -50,6 +50,31 @@ class DashboardScreen : Screen {
         val currentMonth by transactionViewModel.filterMonth.collectAsState()
         val expense by viewModel.expense.collectAsState()
         val uiState by viewModel.uiState.collectAsState()
+        val isSyncing by viewModel.isSyncing.collectAsState() // Collect the new isSyncing state
+
+        // New states to manage persistent banner visibility and content
+        var isBannerActive by remember { mutableStateOf(false) } // Renamed from shouldShowPersistentBanner for clarity
+        var lastKnownOfflineErrorState by remember { mutableStateOf<UiState?>(null) }
+
+        LaunchedEffect(uiState, isSyncing) { // Observe both uiState and isSyncing
+            Logger.d("DashboardScreen:: uiState changed to $uiState, isSyncing: $isSyncing")
+            when (uiState) {
+                is UiState.Offline, is UiState.Error, is UiState.Connecting -> {
+                    isBannerActive = true
+                    lastKnownOfflineErrorState = uiState
+                }
+                is UiState.Idle -> {
+                    // Only hide banner if we are Idle AND no sync is in progress.
+                    // This prevents the banner from disappearing if uiState briefly becomes Idle during a sync.
+                    if (!isSyncing) {
+                        isBannerActive = false
+                        lastKnownOfflineErrorState = null
+                    }
+                    // If uiState is Idle but isSyncing is true, the banner should remain if it was active.
+                    // This case is implicitly handled by not setting isBannerActive to false.
+                }
+            }
+        }
 
         val previousMonth = remember(currentMonth) {
             if (currentMonth.month == 1) YearMonth(currentMonth.year - 1, 12)
@@ -91,22 +116,25 @@ class DashboardScreen : Screen {
 
         Scaffold(
             topBar = {
-                // The topBar now only contains the banner, which handles its own visibility.
-                AnimatedVisibility(
-                    visible = uiState is UiState.Offline || uiState is UiState.Error,
-                    enter = slideInVertically(initialOffsetY = { -it }),
-                    exit = slideOutVertically(targetOffsetY = { -it })
-                ) {
-                    val (backgroundColor, text, textColor) = when (uiState) {
-                        is UiState.Offline -> Triple(MaterialTheme.colorScheme.tertiaryContainer, "Offline mode: Data is saved locally.", MaterialTheme.colorScheme.onTertiaryContainer)
-                        is UiState.Error -> Triple(MaterialTheme.colorScheme.errorContainer, "Connectivity Issues - Offline Mode", MaterialTheme.colorScheme.onErrorContainer)
-                        else -> Triple(MaterialTheme.colorScheme.surface, "", MaterialTheme.colorScheme.onSurface) // Should not be visible
+                if (isBannerActive) { // Use the new isBannerActive state
+                    AnimatedVisibility(
+                        visible = true, // Always true here, as the outer if handles visibility
+                        enter = slideInVertically(initialOffsetY = { -it }),
+                        exit = slideOutVertically(targetOffsetY = { -it })
+                    ) {
+                        // Determine banner content based on lastKnownOfflineErrorState
+                        val (backgroundColor, text, textColor) = when (lastKnownOfflineErrorState) {
+                            is UiState.Offline -> Triple(MaterialTheme.colorScheme.tertiaryContainer, "Offline mode: Data is saved locally.", MaterialTheme.colorScheme.onTertiaryContainer)
+                            is UiState.Error -> Triple(MaterialTheme.colorScheme.errorContainer, "Connectivity Issues - Offline Mode", MaterialTheme.colorScheme.onErrorContainer)
+                            is UiState.Connecting -> Triple(MaterialTheme.colorScheme.primaryContainer, "Connecting...", MaterialTheme.colorScheme.onPrimaryContainer)
+                            else -> Triple(MaterialTheme.colorScheme.surface, "", MaterialTheme.colorScheme.onSurface) // Fallback, should not be reached if isBannerActive is true
+                        }
+                        SyncStatusBanner(
+                            text = text,
+                            backgroundColor = backgroundColor,
+                            textColor = textColor
+                        )
                     }
-                    SyncStatusBanner(
-                        text = text,
-                        backgroundColor = backgroundColor,
-                        textColor = textColor
-                    )
                 }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -123,16 +151,8 @@ class DashboardScreen : Screen {
             }
         ) { innerPadding ->
             Column(
-                // Apply horizontal and bottom padding from Scaffold, but explicitly set top to 0.dp
-                // This prevents double-padding if Scaffold's top padding calculation is off
-                // due to the dynamic topBar content.
                 Modifier
-                    .padding(
-                        start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
-                        end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-                        bottom = innerPadding.calculateBottomPadding(),
-                        top = 0.dp // Explicitly set top padding to 0
-                    )
+                    .padding(innerPadding)
                     .fillMaxSize()
                     .pullToRefresh(
                         state = pullToRefreshState,
@@ -140,7 +160,7 @@ class DashboardScreen : Screen {
                         onRefresh = onRefresh
                     ),
             ) {
-                if (uiState == UiState.Syncing) {
+                if (isSyncing) { // Use the new isSyncing state for the progress indicator
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
 

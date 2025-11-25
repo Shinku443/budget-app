@@ -34,24 +34,27 @@ class SyncService(
         .debounce { isActive -> if (isActive) 500L else 0L } // Delay showing 'Syncing' for 500ms, but hide immediately
         .stateIn(serviceScope, SharingStarted.Eagerly, false)
 
-    // Combine the status of all sync managers into a single UI state.
+    // New flow to indicate if a sync is visually in progress (for progress bar)
+    val isSyncInProgress: StateFlow<Boolean> = _showSyncingIndicator
+
+    // Combine the status of all sync managers into a single UI state for the banner.
+    // This flow now focuses purely on network/error status, not sync activity.
     val overallState: StateFlow<UiState> = combine(
-        _showSyncingIndicator, // Use the debounced indicator
         transactionSyncManager.status,
         categorySyncManager.status,
         connectivityMonitor.connectionState
-    ) { showSyncing, txStatus, catStatus, connection ->
-        // If disconnected, that's the most important state.
+    ) { txStatus, catStatus, connection ->
+        // 1. If disconnected, that's the most important state for the banner.
         if (connection is ConnectionState.Disconnected) {
             return@combine UiState.Offline
         }
 
-        // If the debounced indicator says we should show syncing, then show it.
-        if (showSyncing) {
-            return@combine UiState.Syncing
+        // 2. If connecting, show the connecting state.
+        if (connection is ConnectionState.Connecting) {
+            return@combine UiState.Connecting
         }
 
-        // If any manager has an error, report the first error found.
+        // 3. If any manager has an error (and we're not disconnected or connecting).
         if (txStatus is SyncStatus.Error) {
             return@combine UiState.Error(txStatus.message)
         }
@@ -59,7 +62,8 @@ class SyncService(
             return@combine UiState.Error(catStatus.message)
         }
 
-        // Otherwise, we are idle.
+        // 4. Otherwise, we are idle (connected, not in an error state).
+        //    Syncing status is now handled by a separate flow (isSyncInProgress).
         UiState.Idle
     }.stateIn(
         scope = serviceScope,

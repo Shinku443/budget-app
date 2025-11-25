@@ -44,7 +44,10 @@ kotlin {
             implementation(libs.sqldelight.android.driver)
             implementation("androidx.work:work-runtime-ktx:2.11.0")
             implementation(libs.compose.colorpicker)
-           }
+            implementation("androidx.core:core-splashscreen:1.0.0")
+            implementation("androidx.compose.material3:material3:1.2.0")
+            implementation("com.google.android.material:material:1.13.0")
+        }
 
         commonMain.dependencies {
             implementation(compose.runtime)

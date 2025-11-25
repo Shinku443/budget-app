@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="splash_background">#A5D8F3</color> <!-- icy blue -->
+
+    <!-- Primary brand colors -->
+    <color name="colorPrimary">#1E3A8A</color> <!-- Deep Navy -->
+    <color name="colorSecondary">#A5D8F3</color> <!-- Icy Blue -->
+    <color name="colorAccent">#F59E0B</color> <!-- Warm Gold -->
+
+    <!-- Neutral surfaces -->
+    <color name="colorBackground">#F9FAFB</color> <!-- Snow White -->
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorOnSurface">#111827</color> <!-- Charcoal -->
+
+    <!-- Semantic states -->
+    <color name="colorSuccess">#10B981</color> <!-- Emerald Green -->
+    <color name="colorError">#EF4444</color> <!-- Bright Red -->
+
+</resources>

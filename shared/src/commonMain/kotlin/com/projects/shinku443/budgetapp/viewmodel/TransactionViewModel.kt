@@ -2,8 +2,11 @@ package com.projects.shinku443.budgetapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.projects.shinku443.budgetapp.model.CategoryType
 import com.projects.shinku443.budgetapp.model.Transaction
+import com.projects.shinku443.budgetapp.network.AiSuggestionService
+import com.projects.shinku443.budgetapp.network.AiSuggestionServiceImpl
 import com.projects.shinku443.budgetapp.repository.TransactionRepository
 import com.projects.shinku443.budgetapp.sync.SyncService
 import com.projects.shinku443.budgetapp.util.TimeWrapper
@@ -15,7 +18,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class TransactionViewModel(
     private val repo: TransactionRepository,
-    private val syncService: SyncService
+    private val syncService: SyncService,
+    private val aiService: AiSuggestionService
 ) : ViewModel() {
 
     private val _filterMonth = MutableStateFlow(TimeWrapper.currentYearMonth())
@@ -24,6 +28,18 @@ class TransactionViewModel(
     private val transactionsForMonth: StateFlow<List<Transaction>> = _filterMonth.flatMapLatest { month ->
         repo.observeTransactionsForMonth(month)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _budgetTips = MutableStateFlow<List<String>>(emptyList())
+    val budgetTips: StateFlow<List<String>> = _budgetTips
+
+    fun loadBudgetTips(transactions: List<Transaction>) {
+        viewModelScope.launch {
+            Logger.d("Attempting to get tips")
+            val tips = aiService.suggestBudgetTips(transactions)
+            Logger.d("Tips $tips")
+            _budgetTips.value = tips
+        }
+    }
 
     // --- PENDING DELETION LOGIC RE-ADDED ---
     private val pendingDeleteIds = MutableStateFlow(setOf<String>())

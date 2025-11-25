@@ -48,4 +48,5 @@ class SettingsViewModel(
     fun setLoggedIn(isLoggedIn: Boolean) {
         viewModelScope.launch { settingsRepo.setLoggedIn(isLoggedIn) }
     }
+
 }

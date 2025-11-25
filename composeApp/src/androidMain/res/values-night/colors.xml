@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary brand colors -->
+    <color name="colorPrimary">#0F172A</color> <!-- Deep Indigo -->
+    <color name="colorSecondary">#1E3A8A</color> <!-- Navy -->
+    <color name="colorAccent">#FFD700</color> <!-- Gold -->
+
+    <!-- Neutral surfaces -->
+    <color name="colorBackground">#111827</color> <!-- Charcoal -->
+    <color name="colorSurface">#1F2937</color> <!-- Dark Gray -->
+    <color name="colorOnSurface">#F9FAFB</color> <!-- Snow White -->
+
+    <!-- Semantic states -->
+    <color name="colorSuccess">#34D399</color> <!-- Bright Green -->
+    <color name="colorError">#F87171</color> <!-- Softer Red -->
+</resources>

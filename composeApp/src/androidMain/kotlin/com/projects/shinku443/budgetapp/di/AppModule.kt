@@ -7,10 +7,14 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.projects.shinku443.budgetapp.api.ApiClient
 import com.projects.shinku443.budgetapp.connectivity.ConnectivityMonitor
 import com.projects.shinku443.budgetapp.db.BudgetDatabase
+import com.projects.shinku443.budgetapp.network.AiSuggestionService
+import com.projects.shinku443.budgetapp.network.AiSuggestionServiceImpl
 import com.projects.shinku443.budgetapp.repository.BudgetRepository
 import com.projects.shinku443.budgetapp.repository.CategoryRepository
 import com.projects.shinku443.budgetapp.repository.SettingsRepository
 import com.projects.shinku443.budgetapp.repository.TransactionRepository
+import com.projects.shinku443.budgetapp.settings.SecureKeyProvider
+import com.projects.shinku443.budgetapp.settings.SettingsManager
 import com.projects.shinku443.budgetapp.sync.CategorySyncManager
 import com.projects.shinku443.budgetapp.sync.SyncService
 import com.projects.shinku443.budgetapp.sync.TransactionSyncManager
@@ -45,6 +49,12 @@ val appModule = module {
 
     // API
     single { ApiClient("http://10.0.2.2:8080", get()) }
+    single { HttpClient() }
+    single<AiSuggestionService> { AiSuggestionServiceImpl(get(), get()) }
+
+    // Secure API Key Storage
+    single { SettingsManager(get()) }
+    single { SecureKeyProvider(androidContext()) }
 
     // SQLDelight DB
     single<SqlDriver> {
@@ -73,7 +83,7 @@ val appModule = module {
 
     // ViewModels
     viewModel { CategoryViewModel(get(), get()) }
-    viewModel { TransactionViewModel(get(), get()) }
+    viewModel { TransactionViewModel(get(), get(), get()) }
     viewModel {
         BudgetViewModel(
             get(),

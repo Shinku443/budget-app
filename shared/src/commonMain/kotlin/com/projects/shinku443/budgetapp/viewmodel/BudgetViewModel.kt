@@ -18,9 +18,10 @@ import kotlinx.coroutines.launch
 
 sealed class UiState {
     object Idle : UiState()
-    object Syncing : UiState()
+    // object Syncing : UiState() // Removed, as sync status is now separate
     object Offline : UiState()
     data class Error(val message: String) : UiState()
+    object Connecting : UiState()
 }
 
 class BudgetViewModel(
@@ -33,9 +34,13 @@ class BudgetViewModel(
     private val _currentMonth = MutableStateFlow(TimeWrapper.currentYearMonth())
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
 
-    // The ViewModel now gets its UI state directly from the SyncService.
+    // The ViewModel now gets its UI state (for banner) directly from the SyncService.
     val uiState: StateFlow<UiState> = syncService.overallState
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiState.Idle)
+
+    // New flow to indicate if a sync is visually in progress (for progress bar)
+    val isSyncing: StateFlow<Boolean> = syncService.isSyncInProgress
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {
         startPeriodicSync()
@@ -77,7 +82,7 @@ class BudgetViewModel(
     private fun startPeriodicSync() {
         viewModelScope.launch {
             while (true) {
-                delay(60_000) // Wait for 1 minute
+                delay(10_000) // Wait for 10 seconds for testing
                 Logger.d("BudgetViewModel:: Starting periodic sync.")
                 syncService.syncAll(currentMonth.value)
             }
