@@ -15,7 +15,7 @@ import platform.posix.memcpy
 
 actual class SecureKeyProvider {
     private val service = "com.projects.shinku443.budgetapp"
-    private val account = "openai_api_key"
+    private val account = "gemini_api_key"
 
     actual fun getApiKey(): String? {
         val query = mapOf(

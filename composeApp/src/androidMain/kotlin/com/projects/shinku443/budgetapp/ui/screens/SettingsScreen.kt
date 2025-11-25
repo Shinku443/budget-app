@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.screen.Screen
@@ -127,15 +128,16 @@ fun SettingsContent() {
             )
         }
 
-        Text("Enter your OpenAI API Key")
+        Text("Enter your Google Gemini API Key")
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = apiKey,
             onValueChange = { apiKey = it },
             label = { Text("API Key") },
             modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation()
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Button(
             onClick = {
                 settingsManager.saveApiKey(apiKey)

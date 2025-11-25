@@ -4,7 +4,6 @@ import co.touchlab.kermit.Logger
 import com.projects.shinku443.budgetapp.model.Transaction
 import com.projects.shinku443.budgetapp.settings.SecureKeyProvider
 import io.ktor.client.HttpClient
-import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -21,35 +20,36 @@ interface AiSuggestionService {
     suspend fun suggestBudgetTips(transactions: List<Transaction>): List<String>
 }
 
-// Implementation using OpenAI API
+// Implementation using Google Gemini API
 class AiSuggestionServiceImpl(
     private val httpClient: HttpClient,
     private val secureKeyProvider: SecureKeyProvider
 ) : AiSuggestionService {
 
-
     override suspend fun suggestBudgetTips(transactions: List<Transaction>): List<String> {
         val apiKey = secureKeyProvider.getApiKey()
         if (apiKey.isNullOrBlank()) {
-            Logger.e("OpenAI API key is not set. Cannot get suggestions.")
+            Logger.e("Google Gemini API key is not set. Cannot get suggestions.")
             return emptyList()
         }
 
         Logger.d("Suggesting via transactions:: $transactions")
         val summary = buildSummary(transactions)
 
-        val response: HttpResponse = httpClient.post("https://api.openai.com/v1/chat/completions") {
-            header("Authorization", "Bearer $apiKey")
+        val response: HttpResponse = httpClient.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey") {
             contentType(ContentType.Application.Json)
             setBody(
                 """
                 {
-                  "model": "gpt-4o-mini",
-                  "messages": [
-                    {"role": "system", "content": "You are a budgeting assistant."},
-                    {"role": "user", "content": "Give 3 short budgeting tips based on: $summary"}
-                  ],
-                  "max_tokens": 100
+                  "contents": [
+                    {
+                      "parts": [
+                        {
+                          "text": "Give 3 short budgeting tips based on: $summary"
+                        }
+                      ]
+                    }
+                  ]
                 }
                 """.trimIndent()
             )
@@ -58,10 +58,12 @@ class AiSuggestionServiceImpl(
         Logger.d("Response:: ${response.bodyAsText()}")
         val json = response.bodyAsText()
         val parsed = Json.parseToJsonElement(json)
-        val content = parsed.jsonObject["choices"]
+        val content = parsed.jsonObject["candidates"]
             ?.jsonArray?.firstOrNull()
-            ?.jsonObject?.get("message")
             ?.jsonObject?.get("content")
+            ?.jsonObject?.get("parts")
+            ?.jsonArray?.firstOrNull()
+            ?.jsonObject?.get("text")
             ?.jsonPrimitive?.content ?: ""
 
         // Split into tips (basic parsing)

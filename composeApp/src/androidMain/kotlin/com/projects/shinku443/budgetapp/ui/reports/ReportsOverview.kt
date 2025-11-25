@@ -47,7 +47,6 @@ fun ReportsOverview(modifier: Modifier = Modifier) {
         }
     }
 
-    AiSuggestionsView()
 
 //    XYGraph(
 //        xAxisModel = rememberFloatLinearAxisModel(data.autoScaleXRange()),
@@ -80,6 +79,9 @@ fun ReportsOverview(modifier: Modifier = Modifier) {
     Text("Income: $income", style = MaterialTheme.typography.bodyMedium)
     Text("Expenses: $expense", style = MaterialTheme.typography.bodyMedium)
     Text("Net: $net", style = MaterialTheme.typography.bodyMedium)
+
+    AiSuggestionsView()
+
 }
 
 

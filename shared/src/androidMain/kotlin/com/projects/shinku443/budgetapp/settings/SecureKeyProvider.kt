@@ -13,10 +13,10 @@ import javax.crypto.spec.GCMParameterSpec
 actual class SecureKeyProvider(private val context: Context) {
 
     companion object {
-        private const val KEY_ALIAS = "openai_key_alias"
+        private const val KEY_ALIAS = "gemini_key_alias"
         private const val PREFS_NAME = "budget_app_secure_prefs"
-        private const val KEY_OPENAI_IV = "openai_api_key_iv"
-        private const val KEY_OPENAI_ENCRYPTED = "openai_api_key_encrypted"
+        private const val KEY_GEMINI_IV = "gemini_api_key_iv"
+        private const val KEY_GEMINI_ENCRYPTED = "gemini_api_key_encrypted"
         private const val ANDROID_KEY_STORE = "AndroidKeyStore"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
     }
@@ -68,14 +68,14 @@ actual class SecureKeyProvider(private val context: Context) {
     actual fun saveApiKey(apiKey: String) {
         val (iv, encryptedApiKey) = encrypt(apiKey)
         prefs.edit()
-            .putString(KEY_OPENAI_IV, Base64.encodeToString(iv, Base64.DEFAULT))
-            .putString(KEY_OPENAI_ENCRYPTED, Base64.encodeToString(encryptedApiKey, Base64.DEFAULT))
+            .putString(KEY_GEMINI_IV, Base64.encodeToString(iv, Base64.DEFAULT))
+            .putString(KEY_GEMINI_ENCRYPTED, Base64.encodeToString(encryptedApiKey, Base64.DEFAULT))
             .apply()
     }
 
     actual fun getApiKey(): String? {
-        val ivString = prefs.getString(KEY_OPENAI_IV, null)
-        val encryptedApiKeyString = prefs.getString(KEY_OPENAI_ENCRYPTED, null)
+        val ivString = prefs.getString(KEY_GEMINI_IV, null)
+        val encryptedApiKeyString = prefs.getString(KEY_GEMINI_ENCRYPTED, null)
 
         if (ivString != null && encryptedApiKeyString != null) {
             return try {

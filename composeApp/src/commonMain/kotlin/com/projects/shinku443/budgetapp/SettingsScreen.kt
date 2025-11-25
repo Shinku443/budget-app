@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.projects.shinku443.budgetapp.settings.SettingsManager
 
@@ -22,13 +23,14 @@ fun SettingsScreen(settingsManager: SettingsManager) {
     var apiKey by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        Text("Enter your OpenAI API Key")
+        Text("Enter your Google Gemini API Key")
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = apiKey,
             onValueChange = { apiKey = it },
             label = { Text("API Key") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation()
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
